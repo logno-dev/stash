@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Extension Icons</title>
+</head>
+<body>
+    <h2>Bookmark Manager Icons</h2>
+    <p>Right-click each icon and "Save image as..." to save as PNG files.</p>
+    
+    <!-- 16x16 Icon -->
+    <h3>16x16 (icon-16.png)</h3>
+    <svg width="16" height="16" viewBox="0 0 16 16" style="border: 1px solid #ccc;">
+        <rect width="16" height="16" fill="#3498db"/>
+        <rect x="3" y="2" width="10" height="12" rx="1" fill="white"/>
+        <rect x="4" y="4" width="8" height="1" fill="#3498db"/>
+        <rect x="4" y="6" width="6" height="1" fill="#3498db"/>
+        <rect x="4" y="8" width="7" height="1" fill="#3498db"/>
+        <rect x="4" y="10" width="5" height="1" fill="#3498db"/>
+    </svg>
+    
+    <!-- 32x32 Icon -->
+    <h3>32x32 (icon-32.png)</h3>
+    <svg width="32" height="32" viewBox="0 0 32 32" style="border: 1px solid #ccc;">
+        <rect width="32" height="32" fill="#3498db"/>
+        <rect x="6" y="4" width="20" height="24" rx="2" fill="white"/>
+        <rect x="8" y="8" width="16" height="2" fill="#3498db"/>
+        <rect x="8" y="12" width="12" height="2" fill="#3498db"/>
+        <rect x="8" y="16" width="14" height="2" fill="#3498db"/>
+        <rect x="8" y="20" width="10" height="2" fill="#3498db"/>
+    </svg>
+    
+    <!-- 48x48 Icon -->
+    <h3>48x48 (icon-48.png)</h3>
+    <svg width="48" height="48" viewBox="0 0 48 48" style="border: 1px solid #ccc;">
+        <rect width="48" height="48" fill="#3498db"/>
+        <rect x="9" y="6" width="30" height="36" rx="3" fill="white"/>
+        <rect x="12" y="12" width="24" height="3" fill="#3498db"/>
+        <rect x="12" y="18" width="18" height="3" fill="#3498db"/>
+        <rect x="12" y="24" width="21" height="3" fill="#3498db"/>
+        <rect x="12" y="30" width="15" height="3" fill="#3498db"/>
+    </svg>
+    
+    <!-- 96x96 Icon -->
+    <h3>96x96 (icon-96.png)</h3>
+    <svg width="96" height="96" viewBox="0 0 96 96" style="border: 1px solid #ccc;">
+        <rect width="96" height="96" fill="#3498db"/>
+        <rect x="18" y="12" width="60" height="72" rx="6" fill="white"/>
+        <rect x="24" y="24" width="48" height="6" fill="#3498db"/>
+        <rect x="24" y="36" width="36" height="6" fill="#3498db"/>
+        <rect x="24" y="48" width="42" height="6" fill="#3498db"/>
+        <rect x="24" y="60" width="30" height="6" fill="#3498db"/>
+    </svg>
+    
+    <!-- 128x128 Icon -->
+    <h3>128x128 (icon-128.png)</h3>
+    <svg width="128" height="128" viewBox="0 0 128 128" style="border: 1px solid #ccc;">
+        <rect width="128" height="128" fill="#3498db"/>
+        <rect x="24" y="16" width="80" height="96" rx="8" fill="white"/>
+        <rect x="32" y="32" width="64" height="8" fill="#3498db"/>
+        <rect x="32" y="48" width="48" height="8" fill="#3498db"/>
+        <rect x="32" y="64" width="56" height="8" fill="#3498db"/>
+        <rect x="32" y="80" width="40" height="8" fill="#3498db"/>
+    </svg>
+
+    <script>
+        // Function to convert SVG to PNG and download
+        function downloadSVGAsPNG(svg, filename, size) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            
+            canvas.width = size;
+            canvas.height = size;
+            
+            const svgData = new XMLSerializer().serializeToString(svg);
+            const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+            const url = URL.createObjectURL(svgBlob);
+            
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0);
+                canvas.toBlob(function(blob) {
+                    const link = document.createElement('a');
+                    link.download = filename;
+                    link.href = URL.createObjectURL(blob);
+                    link.click();
+                    URL.revokeObjectURL(url);
+                });
+            };
+            
+            img.src = url;
+        }
+        
+        // Add download buttons
+        document.addEventListener('DOMContentLoaded', function() {
+            const svgs = document.querySelectorAll('svg');
+            const sizes = [16, 32, 48, 96, 128];
+            
+            svgs.forEach((svg, index) => {
+                const button = document.createElement('button');
+                button.textContent = `Download icon-${sizes[index]}.png`;
+                button.onclick = () => downloadSVGAsPNG(svg, `icon-${sizes[index]}.png`, sizes[index]);
+                svg.parentNode.insertBefore(button, svg.nextSibling);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+{
+  "name": "bookmark-app",
+  "version": "1.0.0",
+  "description": "Personal bookmark manager with React frontend and Node.js backend",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend-react && npm run dev",
+    "build": "cd frontend-react && npm run build",
+    "docker:build": "./scripts/docker-rebuild.sh",
+    "docker:build:clean": "./scripts/docker-rebuild.sh --no-cache",
+    "docker:clean": "./scripts/docker-clean.sh",
+    "docker:clean:full": "./scripts/docker-clean.sh --full",
+    "docker:watch": "./scripts/dev-watch.sh",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

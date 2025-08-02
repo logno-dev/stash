@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            width: 350px;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .header h2 {
+            margin: 0;
+            color: #ffffff;
+            font-size: 18px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #e0e0e0;
+            font-size: 14px;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #555;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+            background: #3d3d3d;
+            color: #e0e0e0;
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #5dade2;
+        }
+        
+        textarea {
+            height: 60px;
+            resize: vertical;
+        }
+        
+        .url-display {
+            background: #2d2d2d;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #aaa;
+            word-break: break-all;
+            max-height: 40px;
+            overflow-y: auto;
+            border: 1px solid #444;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .save-btn {
+            background: #5dade2;
+            color: white;
+        }
+        
+        .save-btn:hover {
+            background: #3498db;
+        }
+        
+        .save-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        
+        .cancel-btn {
+            background: #666;
+            color: white;
+        }
+        
+        .cancel-btn:hover {
+            background: #777;
+        }
+        
+        .status {
+            margin-top: 10px;
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 12px;
+            display: none;
+        }
+        
+        .status.success {
+            background: #2d5a2d;
+            color: #90ee90;
+            border: 1px solid #4a7c4a;
+        }
+        
+        .status.error {
+            background: #5a2d2d;
+            color: #ff9999;
+            border: 1px solid #7c4a4a;
+        }
+        
+        .server-config {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #2d2d2d;
+            border-radius: 4px;
+            border: 1px solid #444;
+        }
+        
+        .server-config label {
+            margin-bottom: 3px;
+            font-size: 12px;
+        }
+        
+        .server-config input {
+            font-size: 12px;
+            padding: 6px;
+        }
+        
+        .settings-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #444;
+            color: #e0e0e0;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 10px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .settings-btn:hover {
+            background: #555;
+        }
+        
+        .auth-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+        
+        .auth-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #666;
+        }
+        
+        .auth-indicator.authenticated {
+            background: #27ae60;
+        }
+        
+        .auth-indicator.unauthenticated {
+            background: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <button class="settings-btn" id="settingsBtn">Settings</button>
+    
+    <div class="header">
+        <h2>
+            <svg width="24" height="24" viewBox="0 0 593 181" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 8px;">
+                <g transform="matrix(1,0,0,1,-52.2572,-165.86)">
+                    <g transform="matrix(0.1,0,0,-0.1,0,1715)">
+                        <path d="M824,15376C655,15291 581,15145 608,14954C623,14856 659,14733 701,14642C717,14607 730,14577 730,14575C730,14564 810,14436 858,14370C1047,14110 1342,13925 1710,13836C2073,13749 2618,13749 3070,13836C3168,13855 3362,13916 3422,13946C3479,13975 3490,13975 3539,13950C3849,13792 4584,13724 5105,13806C5713,13902 6135,14233 6315,14755C6382,14948 6386,15099 6328,15214C6280,15308 6125,15410 6028,15410C5987,15410 5978,15406 5956,15378C5942,15359 5927,15319 5921,15286C5900,15173 5912,15143 5943,15230C5954,15259 5971,15287 5987,15297C6026,15323 6057,15299 6103,15211C6136,15147 6140,15130 6140,15067C6140,14949 6092,14868 5975,14784C5860,14703 5735,14658 5616,14657C5535,14656 5487,14674 5155,14830C5111,14851 5017,14896 4945,14930C4803,14998 4686,15053 4570,15107C4472,15152 4347,15193 4235,15215C4164,15229 4118,15231 4015,15227C3844,15219 3727,15185 3600,15107C3470,15027 3493,15030 3411,15084C3323,15143 3200,15193 3090,15216C2944,15245 2748,15229 2565,15172C2491,15149 2351,15085 1975,14905C1744,14794 1569,14715 1490,14684C1391,14646 1309,14647 1187,14688C1041,14737 924,14823 865,14924C806,15025 825,15177 910,15272C945,15311 949,15314 973,15303C999,15291 1040,15225 1040,15195C1040,15186 1045,15182 1050,15185C1075,15201 1050,15337 1013,15380C977,15423 916,15422 824,15376Z" 
+                              fill="white" 
+                              stroke="black" 
+                              stroke-width="8"/>
+                    </g>
+                </g>
+            </svg>
+            Stash
+        </h2>
+    </div>
+    
+    <div class="auth-status">
+        <div class="auth-indicator" id="authIndicator"></div>
+        <span id="authStatus">Checking authentication...</span>
+    </div>
+    
+
+    
+    <div class="form-group">
+        <label>
+            <input type="checkbox" id="noteOnlyMode" style="margin-right: 8px;">
+            Save as note only (ignore current page)
+        </label>
+    </div>
+    
+    <div class="form-group" id="currentPageGroup">
+        <label>Current Page:</label>
+        <div class="url-display" id="currentUrl">Loading...</div>
+    </div>
+    
+    <div class="form-group">
+        <label for="notes">Notes:</label>
+        <textarea id="notes" placeholder="Add your notes here..." required></textarea>
+    </div>
+    
+    <div class="form-group">
+        <label for="tags">Tags (optional):</label>
+        <input type="text" id="tags" placeholder="work, reference, tutorial">
+    </div>
+    
+    <div class="buttons">
+        <button class="save-btn" id="saveBtn">Save</button>
+        <button class="cancel-btn" id="cancelBtn">Cancel</button>
+    </div>
+    
+    <div class="status" id="status"></div>
+    
+    <script src="popup.js"></script>
+</body>
+</html>

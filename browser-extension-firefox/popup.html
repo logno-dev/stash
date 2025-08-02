@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            width: 350px;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+        
+        .header {
+            background: #2d2d2d;
+            padding: 15px 20px;
+            text-align: center;
+            border-bottom: 1px solid #444;
+        }
+        
+        .header h2 {
+            margin: 0;
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .tabs {
+            display: flex;
+            background: #2d2d2d;
+            border-bottom: 1px solid #444;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 12px 8px;
+            text-align: center;
+            cursor: pointer;
+            background: #2d2d2d;
+            color: #aaa;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .tab:hover {
+            background: #3d3d3d;
+            color: #e0e0e0;
+        }
+        
+        .tab.active {
+            background: #1a1a1a;
+            color: #5dade2;
+            border-bottom: 2px solid #5dade2;
+        }
+        
+        .tab-content {
+            padding: 20px;
+        }
+        
+        .tab-panel {
+            display: none;
+        }
+        
+        .tab-panel.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #e0e0e0;
+            font-size: 14px;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #555;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+            font-family: inherit;
+            background: #3d3d3d;
+            color: #e0e0e0;
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #5dade2;
+            box-shadow: 0 0 0 1px #5dade2, 0 0 0 4px rgba(93, 173, 226, 0.3);
+        }
+        
+        textarea {
+            height: 60px;
+            resize: vertical;
+        }
+        
+        .url-display {
+            background: #2d2d2d;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #aaa;
+            word-break: break-all;
+            max-height: 40px;
+            overflow-y: auto;
+            border: 1px solid #444;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: inherit;
+            transition: background-color 0.15s ease;
+        }
+        
+        .save-btn {
+            background: #5dade2;
+            color: white;
+        }
+        
+        .save-btn:hover {
+            background: #3498db;
+        }
+        
+        .save-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        
+        .cancel-btn {
+            background: #666;
+            color: white;
+            border: 1px solid #555;
+        }
+        
+        .cancel-btn:hover {
+            background: #777;
+        }
+        
+        .status {
+            margin-top: 10px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 12px;
+            display: none;
+        }
+        
+        .status.success {
+            background: #2d5a2d;
+            color: #90ee90;
+            border: 1px solid #4a7c4a;
+        }
+        
+        .status.error {
+            background: #5a2d2d;
+            color: #ff9999;
+            border: 1px solid #7c4a4a;
+        }
+        
+        .firefox-badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #ff9500;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="firefox-badge">Firefox</div>
+    
+    <div class="header">
+        <h2>
+            <svg width="24" height="24" viewBox="0 0 593 181" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle;">
+                <g transform="matrix(1,0,0,1,-52.2572,-165.86)">
+                    <g transform="matrix(0.1,0,0,-0.1,0,1715)">
+                        <path d="M824,15376C655,15291 581,15145 608,14954C623,14856 659,14733 701,14642C717,14607 730,14577 730,14575C730,14564 810,14436 858,14370C1047,14110 1342,13925 1710,13836C2073,13749 2618,13749 3070,13836C3168,13855 3362,13916 3422,13946C3479,13975 3490,13975 3539,13950C3849,13792 4584,13724 5105,13806C5713,13902 6135,14233 6315,14755C6382,14948 6386,15099 6328,15214C6280,15308 6125,15410 6028,15410C5987,15410 5978,15406 5956,15378C5942,15359 5927,15319 5921,15286C5900,15173 5912,15143 5943,15230C5954,15259 5971,15287 5987,15297C6026,15323 6057,15299 6103,15211C6136,15147 6140,15130 6140,15067C6140,14949 6092,14868 5975,14784C5860,14703 5735,14658 5616,14657C5535,14656 5487,14674 5155,14830C5111,14851 5017,14896 4945,14930C4803,14998 4686,15053 4570,15107C4472,15152 4347,15193 4235,15215C4164,15229 4118,15231 4015,15227C3844,15219 3727,15185 3600,15107C3470,15027 3493,15030 3411,15084C3323,15143 3200,15193 3090,15216C2944,15245 2748,15229 2565,15172C2491,15149 2351,15085 1975,14905C1744,14794 1569,14715 1490,14684C1391,14646 1309,14647 1187,14688C1041,14737 924,14823 865,14924C806,15025 825,15177 910,15272C945,15311 949,15314 973,15303C999,15291 1040,15225 1040,15195C1040,15186 1045,15182 1050,15185C1075,15201 1050,15337 1013,15380C977,15423 916,15422 824,15376Z" 
+                              fill="white" 
+                              stroke="black" 
+                              stroke-width="8"/>
+                    </g>
+                </g>
+            </svg>
+            Stash
+        </h2>
+    </div>
+    
+    <div class="tabs">
+        <button class="tab active" data-tab="bookmark">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+            </svg>
+            Bookmark
+        </button>
+        <button class="tab" data-tab="note">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14,2 14,8 20,8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10,9 9,9 8,9"/>
+            </svg>
+            Note
+        </button>
+        <button class="tab" data-tab="settings">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                <circle cx="12" cy="12" r="3"/>
+            </svg>
+        </button>
+    </div>
+    
+    <div class="tab-content">
+        <!-- Bookmark Tab -->
+        <div class="tab-panel active" id="bookmark-panel">
+            <div class="form-group">
+                <label>Current Page:</label>
+                <div class="url-display" id="currentUrl">Loading...</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="bookmarkNotes">Notes (optional):</label>
+                <textarea id="bookmarkNotes" placeholder="Add your notes here..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="bookmarkTags">Tags (optional):</label>
+                <input type="text" id="bookmarkTags" placeholder="work, reference, tutorial">
+            </div>
+            
+            <div class="buttons">
+                <button class="save-btn" id="saveBookmarkBtn">Save Bookmark</button>
+                <button class="cancel-btn" id="cancelBtn">Cancel</button>
+            </div>
+        </div>
+        
+        <!-- Note Tab -->
+        <div class="tab-panel" id="note-panel">
+            <div class="form-group">
+                <label for="noteContent">Notes:</label>
+                <textarea id="noteContent" placeholder="Add your notes here..." required></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="noteTags">Tags (optional):</label>
+                <input type="text" id="noteTags" placeholder="work, reference, tutorial">
+            </div>
+            
+            <div class="buttons">
+                <button class="save-btn" id="saveNoteBtn">Save Note</button>
+                <button class="cancel-btn" id="cancelBtn2">Cancel</button>
+            </div>
+        </div>
+        
+
+    </div>
+    
+    <div class="status" id="status"></div>
+    
+    <script src="popup.js"></script>
+</body>
+</html>
