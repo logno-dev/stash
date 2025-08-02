@@ -1,10 +1,11 @@
 version: '3.8'
 
 services:
-  bookmark-app:
+  stash-app:
     build:
       context: .
       dockerfile: Dockerfile.dev
+    container_name: stash-app
     ports:
       - "3000:3000"
     volumes:
@@ -15,7 +16,7 @@ services:
       - ./frontend-react/package.json:/app/frontend-react/package.json:ro
       - ./frontend-react/vite.config.js:/app/frontend-react/vite.config.js:ro
       # Persistent data
-      - bookmark-data:/app/data
+      - stash-data:/app/data
       # Node modules (don't mount these)
       - /app/backend/node_modules
       - /app/frontend-react/node_modules
@@ -27,4 +28,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  bookmark-data:
+  stash-data:

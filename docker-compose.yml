@@ -1,10 +1,11 @@
 services:
-  bookmark-app:
+  stash-app:
     build: .
+    container_name: stash-app
     ports:
       - "3000:3000"
     volumes:
-      - stash-app:/app/data
+      - stash-data:/app/data
     env_file:
       - .env
     environment:
