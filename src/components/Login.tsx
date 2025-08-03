@@ -144,8 +144,8 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-stone-900 via-stone-800 to-stone-950 flex items-center justify-center p-4">
-      <div className="bg-stone-800 border border-stone-700 rounded-lg shadow-2xl p-8 w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-950 flex items-center justify-center p-4">
+      <div className="bg-zinc-800 border border-zinc-700 rounded-lg shadow-2xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
           <svg 
             width="48" 
@@ -174,7 +174,7 @@ const Login = () => {
             <>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-300 mb-2">
+                  <label htmlFor="firstName" className="block text-sm font-medium text-zinc-300 mb-2">
                     First Name
                   </label>
                   <input
@@ -183,13 +183,13 @@ const Login = () => {
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     placeholder="John"
-                    className="w-full px-3 py-2 bg-stone-700 border border-stone-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder-stone-400"
+                    className="w-full px-3 py-2 bg-input-bg border border-input-border text-text-primary rounded-md focus:outline-none focus:ring-2 focus:ring-text-muted focus:border-text-muted placeholder-text-muted"
                     disabled={loading}
                     required
                   />
                 </div>
                 <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-300 mb-2">
+                  <label htmlFor="lastName" className="block text-sm font-medium text-zinc-300 mb-2">
                     Last Name
                   </label>
                   <input
@@ -198,7 +198,7 @@ const Login = () => {
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     placeholder="Doe"
-                    className="w-full px-3 py-2 bg-stone-700 border border-stone-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder-stone-400"
+                    className="w-full px-3 py-2 bg-input-bg border border-input-border text-text-primary rounded-md focus:outline-none focus:ring-2 focus:ring-text-muted focus:border-text-muted placeholder-text-muted"
                     disabled={loading}
                     required
                   />
@@ -208,7 +208,7 @@ const Login = () => {
           )}
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-stone-300 mb-2">
+            <label htmlFor="email" className="block text-sm font-medium text-zinc-300 mb-2">
               Email
             </label>
             <input
@@ -225,7 +225,7 @@ const Login = () => {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-stone-300 mb-2">
+            <label htmlFor="password" className="block text-sm font-medium text-zinc-300 mb-2">
               Password
             </label>
             <input
@@ -243,7 +243,7 @@ const Login = () => {
 
           {isRegister && (
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-stone-300 mb-2">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-zinc-300 mb-2">
                 Confirm Password
               </label>
               <input
@@ -268,7 +268,7 @@ const Login = () => {
 
           <button 
             type="submit" 
-            className="w-full bg-orange-600 text-white py-2 px-4 rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-stone-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full bg-accent-orange text-white py-2 px-4 rounded-md hover:bg-accent-orange-hover focus:outline-none focus:ring-2 focus:ring-accent-orange focus:ring-offset-2 focus:ring-offset-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             disabled={loading}
           >
             {loading ? (isRegister ? 'Creating Account...' : 'Logging in...') : (isRegister ? 'Create Account' : 'Login')}
@@ -284,7 +284,7 @@ const Login = () => {
                 setLastName('');
                 setConfirmPassword('');
               }}
-              className="text-orange-400 hover:text-orange-300 text-sm font-medium transition-colors"
+              className="text-text-secondary hover:text-text-primary text-sm font-medium transition-colors"
             >
               {isRegister ? 'Already have an account? Login' : "Don't have an account? Sign up"}
             </button>

@@ -31,7 +31,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       case 'success': return 'text-green-400';
       case 'error': return 'text-red-400';
       case 'warning': return 'text-yellow-400';
-      default: return 'text-orange-400';
+      default: return 'text-text-secondary';
     }
   };
 
@@ -67,10 +67,10 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} showCloseButton={false}>
       <div className="text-center">
-        <div className={`mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-stone-700 mb-4 ${getIconColor()}`}>
+        <div className={`mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-zinc-700 mb-4 ${getIconColor()}`}>
           {getIcon()}
         </div>
-        <p className="text-stone-300 mb-6">{message}</p>
+        <p className="text-zinc-300 mb-6">{message}</p>
         <div className="flex space-x-3">
           {showConfirmButton && onConfirm && (
             <button
@@ -78,14 +78,14 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                 onConfirm();
                 onClose();
               }}
-              className="flex-1 bg-orange-600 text-white py-2 px-4 rounded-md hover:bg-orange-700 transition-colors"
+              className="flex-1 bg-accent-orange text-white py-2 px-4 rounded-md hover:bg-accent-orange-hover transition-colors"
             >
               {confirmText}
             </button>
           )}
           <button
             onClick={onClose}
-            className={`${showConfirmButton && onConfirm ? 'flex-1' : 'w-full'} bg-stone-600 text-white py-2 px-4 rounded-md hover:bg-stone-700 transition-colors`}
+            className={`${showConfirmButton && onConfirm ? 'flex-1' : 'w-full'} bg-zinc-600 text-white py-2 px-4 rounded-md hover:bg-zinc-700 transition-colors`}
           >
             {showConfirmButton && onConfirm ? cancelText : confirmText}
           </button>

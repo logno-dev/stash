@@ -6,7 +6,21 @@ module.exports = {
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        'text-primary': 'var(--text-primary)',
+        'text-secondary': 'var(--text-secondary)',
+        'text-muted': 'var(--text-muted)',
+        'accent-orange': 'var(--accent-orange)',
+        'accent-orange-hover': 'var(--accent-orange-hover)',
+        'tag-cyan': 'var(--tag-cyan)',
+        'tag-cyan-bg': 'var(--tag-cyan-bg)',
+        'tag-cyan-hover': 'var(--tag-cyan-hover)',
+        'border-color': 'var(--border-color)',
+        'input-bg': 'var(--input-bg)',
+        'input-border': 'var(--input-border)',
+      }
+    },
   },
   plugins: [],
 }

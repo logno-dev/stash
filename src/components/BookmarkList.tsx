@@ -224,7 +224,7 @@ const BookmarkList = () => {
     return (
       <div 
         key={bookmark.id} 
-        className="bg-stone-700 rounded-lg shadow-sm border border-stone-600 p-4 hover:shadow-md hover:bg-stone-600 transition-all cursor-pointer"
+        className="bg-zinc-700 rounded-lg shadow-sm border border-zinc-600 p-4 hover:shadow-md hover:bg-zinc-600 transition-all cursor-pointer"
         onClick={() => handleEditBookmark(bookmark)}
       >
         <div className="mb-2">
@@ -234,7 +234,7 @@ const BookmarkList = () => {
               target="_blank" 
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="text-orange-400 hover:text-orange-300 font-medium text-lg"
+              className="text-text-primary hover:text-text-secondary font-medium text-lg"
             >
               {bookmark.title}
             </a>
@@ -244,11 +244,11 @@ const BookmarkList = () => {
         </div>
         
         {bookmark.url && (
-          <div className="text-sm text-stone-400 mb-2 truncate">{bookmark.url}</div>
+          <div className="text-sm text-zinc-400 mb-2 truncate">{bookmark.url}</div>
         )}
         
         {bookmark.notes && (
-          <div className="text-stone-300 mb-3">{bookmark.notes}</div>
+          <div className="text-zinc-300 mb-3">{bookmark.notes}</div>
         )}
         
         {tags.length > 0 && (
@@ -256,7 +256,7 @@ const BookmarkList = () => {
             {tags.map((tag, index) => (
               <span 
                 key={index} 
-                className="inline-block bg-orange-900 text-orange-200 text-xs px-2 py-1 rounded-full"
+                className="inline-block bg-tag-cyan-bg text-tag-cyan text-xs px-2 py-1 rounded-full"
               >
                 {tag}
               </span>
@@ -264,7 +264,7 @@ const BookmarkList = () => {
           </div>
         )}
         
-        <div className="flex justify-between items-center text-sm text-stone-400">
+        <div className="flex justify-between items-center text-sm text-zinc-400">
           <div>Added: {date}</div>
           <button 
             className="text-red-400 hover:text-red-300 p-1 rounded"
@@ -288,18 +288,18 @@ const BookmarkList = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-stone-900 flex items-center justify-center">
+      <div className="min-h-screen bg-zinc-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
-          <div className="text-stone-300">Loading bookmarks...</div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-text-muted mx-auto mb-4"></div>
+          <div className="text-zinc-300">Loading bookmarks...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-stone-900">
-      <header className="bg-stone-800 shadow-sm border-b border-stone-700">
+    <div className="min-h-screen bg-zinc-900">
+      <header className="bg-zinc-800 shadow-sm border-b border-zinc-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-4">
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6 items-center">
@@ -341,12 +341,12 @@ const BookmarkList = () => {
                   placeholder="Search bookmarks..."
                   value={searchQuery}
                   onChange={handleSearch}
-                  className="w-full px-4 py-2 bg-stone-700 border border-stone-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder-stone-400"
+                  className="w-full px-4 py-2 bg-input-bg border border-input-border text-text-primary rounded-md focus:outline-none focus:ring-2 focus:ring-text-muted focus:border-text-muted placeholder-text-muted"
                 />
                 {searchQuery && (
                   <button 
                     onClick={clearSearch} 
-                    className="absolute right-2 top-2 text-stone-400 hover:text-stone-200"
+                    className="absolute right-2 top-2 text-zinc-400 hover:text-zinc-200"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -363,19 +363,18 @@ const BookmarkList = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {Object.keys(bookmarks).length === 0 ? (
           <div className="text-center py-12">
-            <div className="text-stone-400 text-lg">No bookmarks found</div>
+            <div className="text-zinc-400 text-lg">No bookmarks found</div>
           </div>
         ) : (
           <div className="space-y-8">
             {Object.entries(bookmarks)
               .sort(([a], [b]) => a.localeCompare(b))
               .map(([domain, domainBookmarks]) => (
-                <div key={domain} className="bg-stone-800 rounded-lg shadow-sm border border-stone-700">
-                  <div className="bg-stone-700 px-6 py-4 border-b border-stone-600 rounded-t-lg">
+                <div key={domain} className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700">
+                  <div className="bg-zinc-700 px-6 py-4 border-b border-zinc-600 rounded-t-lg">
                     <div className="flex justify-between items-center">
                       <h2 className="text-lg font-semibold text-white">{domain}</h2>
-                      <span className="bg-orange-900 text-orange-200 text-sm px-2 py-1 rounded-full">
-                        {domainBookmarks.length}
+                       <span className="bg-tag-cyan-bg text-tag-cyan text-sm px-2 py-1 rounded-full">                        {domainBookmarks.length}
                       </span>
                     </div>
                   </div>
@@ -392,7 +391,7 @@ const BookmarkList = () => {
 
       {/* Add Button */}
       <button 
-        className="fixed bottom-6 right-6 bg-orange-600 text-white p-4 rounded-full shadow-lg hover:bg-orange-700 transition-colors"
+        className="fixed bottom-6 right-6 bg-accent-orange text-white p-4 rounded-full shadow-lg hover:bg-accent-orange-hover transition-colors"
         onClick={() => setShowAddForm(true)}
       >
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -407,12 +406,12 @@ const BookmarkList = () => {
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
           onClick={(e) => e.target === e.currentTarget && setShowAddForm(false)}
         >
-          <div className="bg-stone-800 rounded-lg shadow-xl w-full max-w-md border border-stone-700">
+          <div className="bg-zinc-800 rounded-lg shadow-xl w-full max-w-md border border-zinc-700">
             <div className="p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Add Bookmark or Note</h3>
               <form onSubmit={handleAddBookmark} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-stone-300 mb-2">
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">
                     URL (optional)
                   </label>
                   <input
@@ -420,12 +419,12 @@ const BookmarkList = () => {
                     value={newBookmark.url}
                     onChange={(e) => setNewBookmark({...newBookmark, url: e.target.value})}
                     placeholder="https://example.com"
-                    className="w-full px-3 py-2 bg-stone-700 border border-stone-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder-stone-400"
+                    className="w-full px-3 py-2 bg-input-bg border border-input-border text-text-primary rounded-md focus:outline-none focus:ring-2 focus:ring-text-muted focus:border-text-muted placeholder-text-muted"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-stone-300 mb-2">
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">
                     Notes
                   </label>
                   <textarea
@@ -434,12 +433,12 @@ const BookmarkList = () => {
                     placeholder="Add your notes here..."
                     required
                     rows={4}
-                    className="w-full px-3 py-2 bg-stone-700 border border-stone-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder-stone-400"
+                    className="w-full px-3 py-2 bg-input-bg border border-input-border text-text-primary rounded-md focus:outline-none focus:ring-2 focus:ring-text-muted focus:border-text-muted placeholder-text-muted"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-stone-300 mb-2">
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">
                     Tags (comma separated)
                   </label>
                   <input
@@ -447,21 +446,21 @@ const BookmarkList = () => {
                     value={newBookmark.tags}
                     onChange={(e) => setNewBookmark({...newBookmark, tags: e.target.value})}
                     placeholder="work, reference, tutorial"
-                    className="w-full px-3 py-2 bg-stone-700 border border-stone-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder-stone-400"
+                    className="w-full px-3 py-2 bg-input-bg border border-input-border text-text-primary rounded-md focus:outline-none focus:ring-2 focus:ring-text-muted focus:border-text-muted placeholder-text-muted"
                   />
                 </div>
                 
                 <div className="flex space-x-3 pt-4">
                   <button 
                     type="submit" 
-                    className="flex-1 bg-orange-600 text-white py-2 px-4 rounded-md hover:bg-orange-700 transition-colors"
+                    className="flex-1 bg-accent-orange text-white py-2 px-4 rounded-md hover:bg-accent-orange-hover transition-colors"
                   >
                     Save
                   </button>
                   <button 
                     type="button" 
                     onClick={() => setShowAddForm(false)} 
-                    className="flex-1 bg-stone-600 text-stone-200 py-2 px-4 rounded-md hover:bg-stone-500 transition-colors"
+                    className="flex-1 bg-zinc-600 text-zinc-200 py-2 px-4 rounded-md hover:bg-zinc-500 transition-colors"
                   >
                     Cancel
                   </button>
@@ -478,12 +477,12 @@ const BookmarkList = () => {
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
           onClick={(e) => e.target === e.currentTarget && setShowEditForm(false)}
         >
-          <div className="bg-stone-800 rounded-lg shadow-xl w-full max-w-md border border-stone-700">
+          <div className="bg-zinc-800 rounded-lg shadow-xl w-full max-w-md border border-zinc-700">
             <div className="p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Edit Bookmark</h3>
               <form onSubmit={handleUpdateBookmark} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-stone-300 mb-2">
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">
                     URL (optional)
                   </label>
                   <input
@@ -491,12 +490,12 @@ const BookmarkList = () => {
                     value={editingBookmark.url}
                     onChange={(e) => setEditingBookmark({...editingBookmark, url: e.target.value})}
                     placeholder="https://example.com"
-                    className="w-full px-3 py-2 bg-stone-700 border border-stone-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder-stone-400"
+                    className="w-full px-3 py-2 bg-input-bg border border-input-border text-text-primary rounded-md focus:outline-none focus:ring-2 focus:ring-text-muted focus:border-text-muted placeholder-text-muted"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-stone-300 mb-2">
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">
                     Notes
                   </label>
                   <textarea
@@ -504,12 +503,12 @@ const BookmarkList = () => {
                     onChange={(e) => setEditingBookmark({...editingBookmark, notes: e.target.value})}
                     placeholder="Add your notes here..."
                     rows={4}
-                    className="w-full px-3 py-2 bg-stone-700 border border-stone-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder-stone-400"
+                    className="w-full px-3 py-2 bg-input-bg border border-input-border text-text-primary rounded-md focus:outline-none focus:ring-2 focus:ring-text-muted focus:border-text-muted placeholder-text-muted"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-stone-300 mb-2">
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">
                     Tags (comma separated)
                   </label>
                   <input
@@ -517,21 +516,21 @@ const BookmarkList = () => {
                     value={editingBookmark.tags}
                     onChange={(e) => setEditingBookmark({...editingBookmark, tags: e.target.value})}
                     placeholder="work, reference, tutorial"
-                    className="w-full px-3 py-2 bg-stone-700 border border-stone-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 placeholder-stone-400"
+                    className="w-full px-3 py-2 bg-input-bg border border-input-border text-text-primary rounded-md focus:outline-none focus:ring-2 focus:ring-text-muted focus:border-text-muted placeholder-text-muted"
                   />
                 </div>
                 
                 <div className="flex space-x-3 pt-4">
                   <button 
                     type="submit" 
-                    className="flex-1 bg-orange-600 text-white py-2 px-4 rounded-md hover:bg-orange-700 transition-colors"
+                    className="flex-1 bg-accent-orange text-white py-2 px-4 rounded-md hover:bg-accent-orange-hover transition-colors"
                   >
                     Update
                   </button>
                   <button 
                     type="button" 
                     onClick={() => setShowEditForm(false)} 
-                    className="flex-1 bg-stone-600 text-stone-200 py-2 px-4 rounded-md hover:bg-stone-500 transition-colors"
+                    className="flex-1 bg-zinc-600 text-zinc-200 py-2 px-4 rounded-md hover:bg-zinc-500 transition-colors"
                   >
                     Cancel
                   </button>
