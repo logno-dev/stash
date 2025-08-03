@@ -8,6 +8,7 @@ export const bookmarks = sqliteTable('bookmarks', {
   notes: text('notes').default(''),
   tags: text('tags').default(''),
   domain: text('domain').notNull(),
+  userId: text('user_id').notNull(),
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 

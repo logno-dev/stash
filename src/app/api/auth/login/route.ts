@@ -2,6 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { loginUser } from '@/lib/auth';
 import { fallbackLoginUser } from '@/lib/fallback-auth';
 
+// Handle CORS preflight requests
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -24,6 +36,12 @@ export async function POST(request: NextRequest) {
         token: authResponse.accessToken,
         user: authResponse.user,
         message: 'Login successful'
+      }, {
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        },
       });
     } catch (authError: any) {
       console.log('Auth service failed, using fallback authentication');
@@ -35,6 +53,12 @@ export async function POST(request: NextRequest) {
         token: fallbackResponse.accessToken,
         user: fallbackResponse.user,
         message: 'Login successful (using fallback auth)'
+      }, {
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        },
       });
     }
   } catch (error: unknown) {
@@ -44,13 +68,27 @@ export async function POST(request: NextRequest) {
         (error as any).response?.status === 401) {
       return NextResponse.json(
         { error: 'Invalid credentials' },
-        { status: 401 }
+        { 
+          status: 401,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          },
+        }
       );
     }
     
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        },
+      }
     );
   }
 }

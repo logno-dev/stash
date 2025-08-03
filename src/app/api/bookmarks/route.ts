@@ -4,7 +4,19 @@ import { bookmarks } from '@/lib/db/schema';
 import { verifyToken } from '@/lib/auth';
 import { fallbackVerifyToken } from '@/lib/fallback-auth';
 import { extractPageTitle, extractDomain, generateNoteTitle } from '@/lib/utils';
-import { desc, or, like } from 'drizzle-orm';
+import { desc, or, like, eq, and } from 'drizzle-orm';
+
+// Handle CORS preflight requests
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
+}
 
 async function requireAuth(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
@@ -35,7 +47,7 @@ async function requireAuth(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireAuth(request);
+    const user = await requireAuth(request);
     
     const body = await request.json();
     const { url, notes = '', tags = '' } = body;
@@ -64,29 +76,50 @@ export async function POST(request: NextRequest) {
       notes,
       tags,
       domain,
+      userId: user.id,
     }).returning();
 
-    return NextResponse.json(bookmark);
+    return NextResponse.json(bookmark, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      },
+    });
   } catch (error: any) {
     console.error('Error adding bookmark:', error);
     
     if (error.message === 'No token provided' || error.message === 'Invalid token') {
       return NextResponse.json(
         { error: 'Unauthorized' },
-        { status: 401 }
+        { 
+          status: 401,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          },
+        }
       );
     }
     
     return NextResponse.json(
       { error: 'Failed to add bookmark' },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        },
+      }
     );
   }
 }
 
 export async function GET(request: NextRequest) {
   try {
-    await requireAuth(request);
+    const user = await requireAuth(request);
     
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
@@ -96,16 +129,20 @@ export async function GET(request: NextRequest) {
       const searchTerm = `%${search}%`;
       results = await db.select().from(bookmarks)
         .where(
-          or(
-            like(bookmarks.title, searchTerm),
-            like(bookmarks.url, searchTerm),
-            like(bookmarks.notes, searchTerm),
-            like(bookmarks.tags, searchTerm)
+          and(
+            eq(bookmarks.userId, user.id),
+            or(
+              like(bookmarks.title, searchTerm),
+              like(bookmarks.url, searchTerm),
+              like(bookmarks.notes, searchTerm),
+              like(bookmarks.tags, searchTerm)
+            )
           )
         )
         .orderBy(desc(bookmarks.createdAt));
     } else {
       results = await db.select().from(bookmarks)
+        .where(eq(bookmarks.userId, user.id))
         .orderBy(desc(bookmarks.createdAt));
     }
     
@@ -119,20 +156,40 @@ export async function GET(request: NextRequest) {
       return acc;
     }, {});
     
-    return NextResponse.json(grouped);
+    return NextResponse.json(grouped, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      },
+    });
   } catch (error: any) {
     console.error('Error fetching bookmarks:', error);
     
     if (error.message === 'No token provided' || error.message === 'Invalid token') {
       return NextResponse.json(
         { error: 'Unauthorized' },
-        { status: 401 }
+        { 
+          status: 401,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          },
+        }
       );
     }
     
     return NextResponse.json(
       { error: 'Failed to fetch bookmarks' },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        },
+      }
     );
   }
 }
