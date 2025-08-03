@@ -1,199 +1,201 @@
-# 📚 Bookmark Manager
+# Stash - Next.js Bookmark Manager
 
-A modern bookmark manager with React frontend, Node.js backend, JWT authentication, and browser extension.
+A modern bookmark manager built with Next.js, Drizzle ORM, Turso (libsql), and auth.bunch.codes authentication.
 
-## ✨ Features
+## Features
 
-- **🔐 JWT Authentication**: Secure login with username/password
-- **⚛️ React Frontend**: Modern, responsive UI built with React + Vite
-- **🚀 Node.js Backend**: Express API with SQLite database
-- **🐳 Docker Ready**: Multi-stage builds with development tools
-- **🔍 Smart Search**: Search across titles, URLs, notes, and tags
-- **🏷️ Domain Grouping**: Automatically groups bookmarks by domain
-- **📱 Browser Extensions**: Chrome and Firefox extensions with settings
-- **🔄 Auto-rebuild**: File watching and cache management tools
-- **📊 Real-time Updates**: Live bookmark management
+- 🔐 Authentication via auth.bunch.codes
+- 📚 Bookmark management with URL title extraction
+- 🏷️ Tag support for organizing bookmarks
+- 🔍 Full-text search across bookmarks
+- 📱 Responsive design with Tailwind CSS
+- 🚀 Server-side rendering with Next.js
+- 💾 Turso database with Drizzle ORM
+- 🎨 Modern UI with Tailwind CSS and custom modals
 
-## 🚀 Quick Start
+## Tech Stack
 
-### Production (Docker)
+- **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
+- **Backend**: Next.js API Routes
+- **Database**: Turso (libsql) with Drizzle ORM
+- **Authentication**: auth.bunch.codes
+- **Deployment**: Vercel-ready
+
+## Setup Instructions
+
+### 1. Environment Variables
+
+Copy the `.env.example` file to `.env.local` and fill in your credentials:
+
 ```bash
-# Build and start
-npm run docker:build
-
-# Or use Docker Compose directly
-docker-compose up -d
+cp .env.example .env.local
 ```
 
-### Development (Local)
-```bash
-# Install dependencies
-npm install
-cd backend && npm install && cd ..
-cd frontend-react && npm install && cd ..
+Required environment variables:
 
-# Start both frontend and backend
+```env
+# Turso Database Configuration
+TURSO_DATABASE_URL=your_turso_database_url_here
+TURSO_AUTH_TOKEN=your_turso_auth_token_here
+
+# Auth.bunch.codes Configuration
+AUTH_API_KEY=your_auth_api_key_here
+AUTH_APP_ID=your_auth_app_id_here
+AUTH_BASE_URL=https://your-auth-server.com/api
+
+# Next.js Configuration
+NEXTAUTH_SECRET=your_nextauth_secret_here
+NEXTAUTH_URL=http://localhost:3000
+```
+
+### 2. Database Setup
+
+1. Create a Turso database:
+   ```bash
+   turso db create bookmark-app
+   ```
+
+2. Get your database URL and auth token:
+   ```bash
+   turso db show bookmark-app
+   turso db tokens create bookmark-app
+   ```
+
+3. Generate and push the database schema:
+   ```bash
+   npm run db:generate
+   npm run db:push
+   ```
+
+### 3. Auth.bunch.codes Setup
+
+1. Contact your system administrator to register your app
+2. Get your API key, App ID, and base URL
+3. Update your `.env.local` file with these credentials
+
+**Note**: If you encounter a 405 error during registration/login, it means the auth.bunch.codes service is not properly configured. The application includes a fallback authentication system that will automatically activate when the main auth service is unavailable. This allows you to test the application functionality while setting up the proper auth service.
+
+#### Troubleshooting Auth Issues
+
+If you see errors like "Request failed with status code 405":
+
+1. **Check your environment variables** - Make sure `AUTH_BASE_URL`, `AUTH_API_KEY`, and `AUTH_APP_ID` are correctly set
+   - `AUTH_BASE_URL` should be `https://auth.bunch.codes/api` (note the `/api` suffix)
+   - `AUTH_API_KEY` should be your actual API key
+   - `AUTH_APP_ID` should be your registered app ID
+
+2. **Test the auth service** - Visit `http://localhost:3000/api/test-auth` to test connectivity
+
+3. **Verify the auth service is running** - The auth.bunch.codes service needs to be accessible at the URL you specified
+
+4. **Use fallback authentication** - The app will automatically fall back to a local authentication system for testing
+
+5. **Check the console logs** - The application logs detailed information about auth requests to help with debugging
+
+#### Fallback Authentication
+
+When the main auth service is unavailable, the application uses an in-memory authentication system that:
+- Stores users temporarily (data is lost on server restart)
+- Uses JWT tokens for session management
+- Provides the same API interface as the main auth service
+- Shows "(using fallback auth)" in success messages
+
+This allows you to fully test the bookmark functionality while setting up the proper authentication service.
+
+### 4. Install Dependencies
+
+```bash
+npm install
+```
+
+### 5. Run the Development Server
+
+```bash
 npm run dev
 ```
 
-### Local Installation (Alternative to Docker)
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-If you prefer to run without Docker:
+## Available Scripts
 
-1. **Install Node.js 20+** on your system
-2. **Clone the project** and navigate to the backend directory
-3. **Install dependencies**: `npm install`
-4. **Configure environment** (optional): Copy `.env.example` to `.env` and modify as needed
-5. **Start the server**: `npm start`
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+- `npm run db:generate` - Generate database migrations
+- `npm run db:migrate` - Run database migrations
+- `npm run db:push` - Push schema changes to database
+- `npm run db:studio` - Open Drizzle Studio
 
-The app will automatically find an available port starting from 3000.
+## API Endpoints
 
-## Browser Extension Setup
+### Authentication
+- `POST /api/auth/login` - User login
+- `POST /api/auth/register` - User registration
+- `GET /api/auth/verify` - Token verification
 
-### Chrome Extension
-1. Open Chrome and go to `chrome://extensions/`
-2. Enable "Developer mode" in the top right
-3. Click "Load unpacked" and select the `browser-extension` folder
-4. The bookmark extension will appear in your toolbar
-5. Configure the server URL (default: `http://localhost:3000`)
-
-### Firefox Extension
-1. Open Firefox and navigate to `about:debugging`
-2. Click "This Firefox" in the left sidebar
-3. Click "Load Temporary Add-on..."
-4. Navigate to the `browser-extension-firefox` folder and select `manifest.json`
-5. Configure the server URL (default: `http://localhost:3000`)
-
-See the individual README files in each extension folder for detailed installation instructions.
-
-## API Usage
-
-### Add a Bookmark
-```bash
-POST /api/bookmarks
-Content-Type: application/json
-
-{
-  "url": "https://example.com/page",
-  "notes": "Optional notes about this bookmark",
-  "tags": "tag1, tag2, tag3"
-}
-```
-
-### Get All Bookmarks
-```bash
-GET /api/bookmarks
-```
-
-### Search Bookmarks
-```bash
-GET /api/bookmarks?search=query
-```
-
-## Project Structure
-
-```
-bookmark-app/
-├── backend/
-│   ├── server.js          # Express server
-│   ├── database.js        # SQLite database operations
-│   └── package.json       # Node.js dependencies
-├── frontend/
-│   ├── index.html         # Main UI
-│   ├── style.css          # Styling
-│   └── script.js          # Frontend JavaScript
-├── browser-extension/         # Chrome extension
-│   ├── manifest.json      # Chrome extension manifest (v3)
-│   ├── popup.html         # Extension popup UI
-│   ├── popup.js           # Extension logic
-│   └── README.md          # Chrome installation guide
-├── browser-extension-firefox/ # Firefox extension
-│   ├── manifest.json      # Firefox extension manifest (v2)
-│   ├── popup.html         # Firefox-optimized popup UI
-│   ├── popup.js           # Firefox-specific logic
-│   └── README.md          # Firefox installation guide
-├── Dockerfile             # Container definition
-├── docker-compose.yml     # Docker Compose configuration
-└── README.md             # This file
-```
+### Bookmarks
+- `GET /api/bookmarks` - Get all bookmarks (with optional search)
+- `POST /api/bookmarks` - Create new bookmark
+- `PUT /api/bookmarks/[id]` - Update bookmark
+- `DELETE /api/bookmarks/[id]` - Delete bookmark
 
 ## Database Schema
 
-The SQLite database contains a single `bookmarks` table:
+The application uses a single `bookmarks` table with the following structure:
 
 ```sql
 CREATE TABLE bookmarks (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  url TEXT NOT NULL,
-  title TEXT,
-  notes TEXT,
-  tags TEXT,
-  domain TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  url TEXT,
+  title TEXT NOT NULL,
+  notes TEXT DEFAULT '',
+  tags TEXT DEFAULT '',
+  domain TEXT NOT NULL,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
-## Configuration
+## Deployment
 
-### Environment Variables
+This app is ready to deploy on Vercel:
 
-Create a `.env` file in the root directory (see `.env.example` for reference):
+1. Push your code to GitHub
+2. Connect your repository to Vercel
+3. Add your environment variables in Vercel dashboard
+4. Deploy!
 
-```bash
-# Server Configuration
-PORT=3000
-NODE_ENV=production
+## Browser Extension Integration
 
-# Future authentication options (not yet implemented)
-# ADMIN_USERNAME=admin
-# ADMIN_PASSWORD=your_secure_password
-```
+The app supports URL parameters for easy integration with browser extensions:
 
-### Automatic Port Detection
+- `?url=https://example.com` - Pre-fill URL
+- `?title=Page Title` - Pre-fill title/notes
+- `?text=Selected text` - Pre-fill notes
 
-The application automatically detects if the specified port is in use and finds the next available port. This prevents conflicts when running multiple instances or when other services are using the default port.
+## User Interface Features
 
-### Data Persistence
+### Custom Modal System
+The application uses custom dark-themed modals instead of browser alerts for:
+- **Registration success/failure** - Elegant confirmation with automatic form switching
+- **Login errors** - Clear error messaging with retry options
+- **Bookmark operations** - Success confirmations for add/edit/delete actions
+- **Delete confirmations** - Warning modals with clear action buttons
 
-- **Docker**: SQLite database is stored in `/app/data/bookmarks.db` and persisted using Docker volumes
-- **Local**: Database is stored in `backend/data/bookmarks.db`
+### Dark Mode Design
+- **Login/Registration pages** - Full dark mode with gradient backgrounds
+- **Form elements** - Dark inputs with blue accent colors
+- **Modals** - Consistent dark theme with appropriate icons
+- **High contrast** - Excellent readability and accessibility
 
-## Browser Extension Features
+## Contributing
 
-### Chrome Extension
-- **Manifest V3** - Latest Chrome extension format
-- **Material Design** - Chrome-optimized styling
-- **Auto-fill current page URL**
-- **Configurable server URL** with persistent storage
-- **Keyboard shortcuts** (Ctrl/Cmd+Enter to save, Escape to close)
-
-### Firefox Extension  
-- **Manifest V2** - Firefox-compatible format
-- **Photon Design** - Firefox-optimized styling and colors
-- **Enhanced UX** - Auto-focus on notes field, longer error timeouts
-- **Native Firefox APIs** - Uses `browser.*` instead of `chrome.*`
-- **Better error handling** - More descriptive error messages
-
-### Common Features
-- **Optional notes and tags**
-- **Status feedback** for successful saves and errors
-- **URL validation** and connection testing
-- **Cross-platform compatibility**
-
-## Development
-
-### Backend Dependencies
-- Express.js - Web framework
-- SQLite3 - Database
-- Axios - HTTP client for fetching page metadata
-- Cheerio - HTML parsing for title extraction
-- CORS - Cross-origin resource sharing
-
-### Frontend
-- Vanilla JavaScript (no frameworks)
-- Responsive CSS Grid/Flexbox layout
-- Fetch API for HTTP requests
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
 ## License
 
-MIT License - feel free to use this project for personal or commercial purposes.
+MIT License - see LICENSE file for details.
