@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Fuse from 'fuse.js';
 import { Bookmark } from '../types';
 import { bookmarkService } from '../utils/bookmarks';
 import { useAuth } from '../contexts/AuthContext';
@@ -20,40 +21,89 @@ interface Props {
 }
 
 export default function BookmarkListScreen({ navigation }: Props) {
+  // Data states
+  const [allBookmarks, setAllBookmarks] = useState<Bookmark[]>([]);
   const [bookmarkGroups, setBookmarkGroups] = useState<Record<string, Bookmark[]>>({});
+  const [filteredBookmarks, setFilteredBookmarks] = useState<Bookmark[]>([]);
+  
+  // Search states
   const [searchQuery, setSearchQuery] = useState('');
+  const [fuse, setFuse] = useState<Fuse<Bookmark> | null>(null);
+  
+  // Loading states
   const [refreshing, setRefreshing] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  
   const { logout } = useAuth();
+
+  // Initialize Fuse.js for fuzzy search
+  const initializeFuse = useCallback((bookmarks: Bookmark[]) => {
+    const fuseOptions = {
+      keys: ['title', 'url', 'notes', 'tags'],
+      threshold: 0.3,
+      includeScore: true,
+    };
+    setFuse(new Fuse(bookmarks, fuseOptions));
+  }, []);
+
+  // Group bookmarks by domain
+  const groupBookmarksByDomain = useCallback((bookmarks: Bookmark[]) => {
+    return bookmarks.reduce((acc: Record<string, Bookmark[]>, bookmark) => {
+      const domain = bookmark.domain;
+      if (!acc[domain]) {
+        acc[domain] = [];
+      }
+      acc[domain].push(bookmark);
+      return acc;
+    }, {});
+  }, []);
 
   useEffect(() => {
     loadBookmarks();
   }, []);
 
-  const loadBookmarks = async (searchTerm?: string) => {
+  const loadBookmarks = async () => {
     try {
-      const data = await bookmarkService.getAllBookmarks(searchTerm);
+      setInitialLoading(true);
+      // Load all bookmarks without search query to get complete dataset
+      const data = await bookmarkService.getAllBookmarks();
+      const bookmarksList = Object.values(data).flat() as Bookmark[];
+      
+      // Store all bookmarks for local searching
+      setAllBookmarks(bookmarksList);
+      setFilteredBookmarks(bookmarksList);
       setBookmarkGroups(data);
+      
+      // Initialize fuzzy search
+      initializeFuse(bookmarksList);
     } catch (error) {
       console.error('Error loading bookmarks:', error);
       Alert.alert('Error', 'Failed to load bookmarks');
     } finally {
       setRefreshing(false);
+      setInitialLoading(false);
     }
   };
 
   const handleRefresh = () => {
     setRefreshing(true);
-    loadBookmarks(searchQuery);
+    loadBookmarks();
   };
 
-  const handleSearch = (query: string) => {
+  // Handle search with fuzzy matching
+  const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
-    // Debounce search
-    clearTimeout((global as any).searchTimeout);
-    (global as any).searchTimeout = setTimeout(() => {
-      loadBookmarks(query);
-    }, 300);
-  };
+    
+    if (!query.trim()) {
+      setFilteredBookmarks(allBookmarks);
+      setBookmarkGroups(groupBookmarksByDomain(allBookmarks));
+    } else if (fuse) {
+      const results = fuse.search(query);
+      const searchResults = results.map(result => result.item);
+      setFilteredBookmarks(searchResults);
+      setBookmarkGroups(groupBookmarksByDomain(searchResults));
+    }
+  }, [allBookmarks, fuse, groupBookmarksByDomain]);
 
   const handleDeleteBookmark = (bookmark: Bookmark) => {
     Alert.alert(
@@ -131,6 +181,14 @@ export default function BookmarkListScreen({ navigation }: Props) {
     </TouchableOpacity>
   );
 
+  if (initialLoading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <Text style={styles.loadingText}>Loading bookmarks...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -151,7 +209,7 @@ export default function BookmarkListScreen({ navigation }: Props) {
             onChangeText={handleSearch}
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <TouchableOpacity onPress={() => handleSearch('')}>
               <Ionicons name="close" size={20} color="#9CA3AF" />
             </TouchableOpacity>
           )}
@@ -167,9 +225,13 @@ export default function BookmarkListScreen({ navigation }: Props) {
         {Object.keys(bookmarkGroups).length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>
-              {searchQuery ? 'No bookmarks found' : 'No bookmarks yet'}
+              {searchQuery ? 'No bookmarks match your search' : 'No bookmarks yet'}
             </Text>
-            {!searchQuery && (
+            {searchQuery ? (
+              <Text style={styles.emptySubtext}>
+                Try adjusting your search terms
+              </Text>
+            ) : (
               <Text style={styles.emptySubtext}>
                 Tap the + button to add your first bookmark
               </Text>
@@ -192,10 +254,18 @@ export default function BookmarkListScreen({ navigation }: Props) {
                   </View>
                 ))}
               </View>
-            ))
+              ))
+        )}
+        
+        {/* Search results info */}
+        {searchQuery && Object.keys(bookmarkGroups).length > 0 && (
+          <View style={styles.searchResultsInfo}>
+            <Text style={styles.searchResultsText}>
+              Showing {filteredBookmarks.length} result{filteredBookmarks.length !== 1 ? 's' : ''} for "{searchQuery}"
+            </Text>
+          </View>
         )}
       </ScrollView>
-
       <TouchableOpacity
         style={styles.fab}
         onPress={() => navigation.navigate('AddEditBookmark')}
@@ -377,5 +447,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#FFFFFF',
     fontWeight: '500',
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#9CA3AF',
+  },
+  searchResultsInfo: {
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  searchResultsText: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
   },
 });

@@ -33,10 +33,32 @@
     "128": "icons/icon-128.png"
   },
   
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": false
+  },
+  
   "applications": {
     "gecko": {
       "id": "stash@example.com",
       "strict_min_version": "57.0"
+    }
+  },
+  
+  "commands": {
+    "_execute_browser_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
+      "description": "Open Stash popup"
+    },
+    "open-notes-tab": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+N",
+        "mac": "Command+Shift+N"
+      },
+      "description": "Open Stash popup to notes tab"
     }
   }
 }

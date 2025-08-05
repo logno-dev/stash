@@ -9,6 +9,7 @@ class BookmarkExtensionFirefox {
         await this.getCurrentTab();
         this.bindEvents();
         this.initTabs();
+        this.handleCommandShortcut();
     }
 
     async getCurrentTab() {
@@ -205,6 +206,34 @@ class BookmarkExtensionFirefox {
         } finally {
             saveBtn.disabled = false;
             saveBtn.textContent = originalText;
+        }
+    }
+
+    handleCommandShortcut() {
+        // Check if popup was opened via the notes shortcut
+        const urlParams = new URLSearchParams(window.location.search);
+        const openTab = urlParams.get('tab');
+        
+        if (openTab === 'note') {
+            // Switch to notes tab
+            const noteTab = document.querySelector('[data-tab="note"]');
+            const bookmarkTab = document.querySelector('[data-tab="bookmark"]');
+            const panels = document.querySelectorAll('.tab-panel');
+            
+            // Update active tab
+            bookmarkTab.classList.remove('active');
+            noteTab.classList.add('active');
+            
+            // Update active panel
+            panels.forEach(p => p.classList.remove('active'));
+            document.getElementById('note-panel').classList.add('active');
+            
+            this.activeTabType = 'note';
+            
+            // Focus on note content field
+            setTimeout(() => {
+                document.getElementById('noteContent').focus();
+            }, 100);
         }
     }
 
