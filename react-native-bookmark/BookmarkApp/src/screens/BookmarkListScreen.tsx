@@ -133,10 +133,15 @@ export default function BookmarkListScreen({ navigation }: Props) {
     });
   };
 
+  const truncateUrl = (url: string, maxLength: number = 60): string => {
+    if (url.length <= maxLength) return url;
+    return url.substring(0, maxLength) + '...';
+  };
+
   const renderBookmark = ({ item }: { item: Bookmark }) => (
     <TouchableOpacity
       style={styles.bookmarkItem}
-      onPress={() => navigation.navigate('AddEditBookmark', { bookmark: item })}
+      onPress={() => item.url ? handleOpenUrl(item.url) : undefined}
     >
       <View style={styles.bookmarkContent}>
         <Text style={styles.bookmarkTitle} numberOfLines={2}>
@@ -144,11 +149,9 @@ export default function BookmarkListScreen({ navigation }: Props) {
         </Text>
         
         {item.url && (
-          <TouchableOpacity onPress={() => handleOpenUrl(item.url!)}>
-            <Text style={styles.bookmarkUrl} numberOfLines={1}>
-              {item.url}
-            </Text>
-          </TouchableOpacity>
+          <Text style={styles.bookmarkUrl} numberOfLines={1}>
+            {truncateUrl(item.url)}
+          </Text>
         )}
         
         {item.notes && (
@@ -167,17 +170,27 @@ export default function BookmarkListScreen({ navigation }: Props) {
           </View>
         )}
         
-        <Text style={styles.bookmarkDate}>
-          {new Date(item.createdAt).toLocaleDateString()}
-        </Text>
+        <View style={styles.bookmarkFooter}>
+          <Text style={styles.bookmarkDate}>
+            {new Date(item.createdAt).toLocaleDateString()}
+          </Text>
+        </View>
       </View>
       
-      <TouchableOpacity
-        style={styles.deleteButton}
-        onPress={() => handleDeleteBookmark(item)}
-      >
-        <Ionicons name="trash-outline" size={20} color="#EF4444" />
-      </TouchableOpacity>
+      <View style={styles.actionButtons}>
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={() => navigation.navigate('AddEditBookmark', { bookmark: item })}
+        >
+          <Ionicons name="pencil-outline" size={20} color="#3B82F6" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => handleDeleteBookmark(item)}
+        >
+          <Ionicons name="trash-outline" size={20} color="#EF4444" />
+        </TouchableOpacity>
+      </View>
     </TouchableOpacity>
   );
 
@@ -376,9 +389,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#FFFFFF',
   },
+  bookmarkFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   bookmarkDate: {
     fontSize: 12,
     color: '#9CA3AF',
+  },
+  actionButtons: {
+    flexDirection: 'column',
+    gap: 8,
+  },
+  editButton: {
+    padding: 8,
   },
   deleteButton: {
     padding: 8,

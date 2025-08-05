@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Bookmark } from '@/lib/db/schema';
 import ConfirmationModal from './ConfirmationModal';
+import Popover from './Popover';
 import Fuse from 'fuse.js';
 
 interface BookmarkFormData {
@@ -14,6 +15,11 @@ interface BookmarkFormData {
 
 const INITIAL_LOAD_COUNT = 20;
 const CHUNK_SIZE = 10;
+
+const truncateUrl = (url: string, maxLength: number = 60): string => {
+  if (url.length <= maxLength) return url;
+  return url.substring(0, maxLength) + '...';
+};
 
 const BookmarkList = () => {
   // Data states
@@ -365,6 +371,12 @@ const BookmarkList = () => {
     }
   };
 
+  const handleBookmarkClick = (bookmark: Bookmark) => {
+    if (bookmark.url) {
+      window.open(bookmark.url, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   const renderBookmarkItem = (bookmark: Bookmark) => {
     const date = new Date(bookmark.createdAt || '').toLocaleDateString();
     const tags = bookmark.tags ? bookmark.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [];
@@ -372,8 +384,8 @@ const BookmarkList = () => {
     return (
       <div 
         key={bookmark.id} 
-        className="bg-zinc-700 rounded-lg shadow-sm border border-zinc-600 p-4 hover:shadow-md hover:bg-zinc-600 transition-all cursor-pointer"
-        onClick={() => handleEditBookmark(bookmark)}
+        className={`bg-zinc-700 rounded-lg shadow-sm border border-zinc-600 p-4 hover:shadow-md hover:bg-zinc-600 transition-all ${bookmark.url ? 'cursor-pointer' : ''}`}
+        onClick={() => handleBookmarkClick(bookmark)}
       >
         <div className="mb-2">
           {bookmark.url ? (
@@ -392,7 +404,11 @@ const BookmarkList = () => {
         </div>
         
         {bookmark.url && (
-          <div className="text-sm text-zinc-400 mb-2 truncate">{bookmark.url}</div>
+          <div className="text-sm text-zinc-400 mb-2">
+            <Popover content={bookmark.url}>
+              <span className="cursor-help">{truncateUrl(bookmark.url)}</span>
+            </Popover>
+          </div>
         )}
         
         {bookmark.notes && (
@@ -414,21 +430,36 @@ const BookmarkList = () => {
         
         <div className="flex justify-between items-center text-sm text-zinc-400">
           <div>Added: {date}</div>
-          <button 
-            className="text-red-400 hover:text-red-300 p-1 rounded"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDeleteBookmark(bookmark.id, bookmark.title);
-            }}
-            title="Delete bookmark"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="3,6 5,6 21,6"></polyline>
-              <path d="m19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"></path>
-              <line x1="10" y1="11" x2="10" y2="17"></line>
-              <line x1="14" y1="11" x2="14" y2="17"></line>
-            </svg>
-          </button>
+          <div className="flex gap-2">
+            <button 
+              className="text-blue-400 hover:text-blue-300 p-1 rounded"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEditBookmark(bookmark);
+              }}
+              title="Edit bookmark"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="m18 2 4 4-14 14H4v-4L18 2z"></path>
+                <path d="m14.5 5.5 4 4"></path>
+              </svg>
+            </button>
+            <button 
+              className="text-red-400 hover:text-red-300 p-1 rounded"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteBookmark(bookmark.id, bookmark.title);
+              }}
+              title="Delete bookmark"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="3,6 5,6 21,6"></polyline>
+                <path d="m19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"></path>
+                <line x1="10" y1="11" x2="10" y2="17"></line>
+                <line x1="14" y1="11" x2="14" y2="17"></line>
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     );
