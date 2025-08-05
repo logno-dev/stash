@@ -4,7 +4,7 @@ import { bookmarks } from '@/lib/db/schema';
 import { verifyToken } from '@/lib/auth';
 import { fallbackVerifyToken } from '@/lib/fallback-auth';
 import { extractPageTitle, extractDomain, generateNoteTitle } from '@/lib/utils';
-import { desc, or, like, eq, and } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 
 // Handle CORS preflight requests
 export async function OPTIONS() {
@@ -122,25 +122,24 @@ export async function GET(request: NextRequest) {
     const user = await requireAuth(request);
     
     const { searchParams } = new URL(request.url);
-    const search = searchParams.get('search');
+    const limit = searchParams.get('limit');
+    const all = searchParams.get('all');
     
     let results;
-    if (search) {
-      const searchTerm = `%${search}%`;
+    if (all === 'true') {
+      // Return all bookmarks for background loading
       results = await db.select().from(bookmarks)
-        .where(
-          and(
-            eq(bookmarks.userId, user.id),
-            or(
-              like(bookmarks.title, searchTerm),
-              like(bookmarks.url, searchTerm),
-              like(bookmarks.notes, searchTerm),
-              like(bookmarks.tags, searchTerm)
-            )
-          )
-        )
+        .where(eq(bookmarks.userId, user.id))
         .orderBy(desc(bookmarks.createdAt));
+    } else if (limit) {
+      // Return limited results for initial load
+      const limitNum = parseInt(limit, 10);
+      results = await db.select().from(bookmarks)
+        .where(eq(bookmarks.userId, user.id))
+        .orderBy(desc(bookmarks.createdAt))
+        .limit(limitNum);
     } else {
+      // Default behavior - return all (for backward compatibility)
       results = await db.select().from(bookmarks)
         .where(eq(bookmarks.userId, user.id))
         .orderBy(desc(bookmarks.createdAt));

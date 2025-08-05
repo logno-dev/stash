@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Bookmark } from '@/lib/db/schema';
 import ConfirmationModal from './ConfirmationModal';
+import Fuse from 'fuse.js';
 
 interface BookmarkFormData {
   url: string;
@@ -11,10 +12,26 @@ interface BookmarkFormData {
   tags: string;
 }
 
+const INITIAL_LOAD_COUNT = 20;
+const CHUNK_SIZE = 10;
+
 const BookmarkList = () => {
-  const [bookmarks, setBookmarks] = useState<Record<string, Bookmark[]>>({});
-  const [loading, setLoading] = useState(true);
+  // Data states
+  const [allBookmarks, setAllBookmarks] = useState<Bookmark[]>([]);
+  const [displayedBookmarks, setDisplayedBookmarks] = useState<Record<string, Bookmark[]>>({});
+  const [filteredBookmarks, setFilteredBookmarks] = useState<Bookmark[]>([]);
+  const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD_COUNT);
+  
+  // Loading states
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [backgroundLoading, setBackgroundLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  
+  // Search states
   const [searchQuery, setSearchQuery] = useState('');
+  const [fuse, setFuse] = useState<Fuse<Bookmark> | null>(null);
+  
+  // Form states
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [editingBookmark, setEditingBookmark] = useState<(Bookmark & BookmarkFormData) | null>(null);
@@ -23,18 +40,43 @@ const BookmarkList = () => {
     notes: '',
     tags: ''
   });
-  const { logout, token } = useAuth();
-
+  
   // Modal states
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [bookmarkToDelete, setBookmarkToDelete] = useState<{ id: number; title: string } | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  
+  const { logout, token } = useAuth();
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
-  const loadBookmarks = async (searchTerm = '') => {
+  // Initialize Fuse.js for fuzzy search
+  const initializeFuse = useCallback((bookmarks: Bookmark[]) => {
+    const fuseOptions = {
+      keys: ['title', 'url', 'notes', 'tags'],
+      threshold: 0.3,
+      includeScore: true,
+    };
+    setFuse(new Fuse(bookmarks, fuseOptions));
+  }, []);
+
+  // Group bookmarks by domain
+  const groupBookmarksByDomain = useCallback((bookmarks: Bookmark[]) => {
+    return bookmarks.reduce((acc: Record<string, Bookmark[]>, bookmark) => {
+      const domain = bookmark.domain;
+      if (!acc[domain]) {
+        acc[domain] = [];
+      }
+      acc[domain].push(bookmark);
+      return acc;
+    }, {});
+  }, []);
+
+  // Load initial bookmarks (limited)
+  const loadInitialBookmarks = async () => {
     try {
-      const apiUrl = searchTerm ? `/api/bookmarks?search=${encodeURIComponent(searchTerm)}` : '/api/bookmarks';
-      const response = await fetch(apiUrl, {
+      const response = await fetch(`/api/bookmarks?limit=${INITIAL_LOAD_COUNT}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -49,19 +91,123 @@ const BookmarkList = () => {
       }
 
       const data = await response.json();
-      setBookmarks(data);
+      const bookmarksList = Object.values(data).flat() as Bookmark[];
+      
+      setDisplayedBookmarks(data);
+      setFilteredBookmarks(bookmarksList);
+      setVisibleCount(bookmarksList.length);
     } catch (error) {
-      console.error('Error loading bookmarks:', error);
+      console.error('Error loading initial bookmarks:', error);
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
     }
   };
 
+  // Load all bookmarks in background
+  const loadAllBookmarks = async () => {
+    try {
+      setBackgroundLoading(true);
+      const response = await fetch('/api/bookmarks?all=true', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load all bookmarks');
+      }
+
+      const data = await response.json();
+      const bookmarksList = Object.values(data).flat() as Bookmark[];
+      
+      setAllBookmarks(bookmarksList);
+      initializeFuse(bookmarksList);
+      
+      // If no search is active, update filtered bookmarks
+      if (!searchQuery) {
+        setFilteredBookmarks(bookmarksList);
+      }
+    } catch (error) {
+      console.error('Error loading all bookmarks:', error);
+    } finally {
+      setBackgroundLoading(false);
+    }
+  };
+
+  // Handle search with fuzzy matching
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query);
+    
+    if (!query.trim()) {
+      setFilteredBookmarks(allBookmarks);
+      setVisibleCount(Math.min(INITIAL_LOAD_COUNT, allBookmarks.length));
+    } else if (fuse) {
+      const results = fuse.search(query);
+      const searchResults = results.map(result => result.item);
+      setFilteredBookmarks(searchResults);
+      setVisibleCount(searchResults.length); // Show all search results immediately
+    }
+  }, [allBookmarks, fuse]);
+
+  // Load more bookmarks for infinite scroll
+  const loadMoreBookmarks = useCallback(() => {
+    if (loadingMore || searchQuery) return; // Don't load more during search
+    
+    setLoadingMore(true);
+    setTimeout(() => {
+      const newVisibleCount = Math.min(
+        visibleCount + CHUNK_SIZE,
+        filteredBookmarks.length
+      );
+      setVisibleCount(newVisibleCount);
+      setLoadingMore(false);
+    }, 100); // Small delay to show loading state
+  }, [loadingMore, searchQuery, visibleCount, filteredBookmarks.length]);
+
+  // Update displayed bookmarks when visible count or filtered bookmarks change
+  useEffect(() => {
+    const visibleBookmarks = filteredBookmarks.slice(0, visibleCount);
+    const grouped = groupBookmarksByDomain(visibleBookmarks);
+    setDisplayedBookmarks(grouped);
+  }, [filteredBookmarks, visibleCount, groupBookmarksByDomain]);
+
+  // Setup intersection observer for infinite scroll
+  useEffect(() => {
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+    }
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting && !searchQuery && visibleCount < filteredBookmarks.length) {
+          loadMoreBookmarks();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (loadMoreRef.current) {
+      observerRef.current.observe(loadMoreRef.current);
+    }
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [loadMoreBookmarks, searchQuery, visibleCount, filteredBookmarks.length]);
+
+  // Initial load
   useEffect(() => {
     if (token) {
-      loadBookmarks();
+      loadInitialBookmarks();
+      // Start background loading after a short delay
+      setTimeout(() => {
+        loadAllBookmarks();
+      }, 100);
     }
-  }, [token]);
+  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     // Check for shared content from URL parameters
@@ -85,20 +231,13 @@ const BookmarkList = () => {
     }
   }, []);
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
-    setSearchQuery(query);
-    
-    // Debounce search
-    clearTimeout((window as any).searchTimeout);
-    (window as any).searchTimeout = setTimeout(() => {
-      loadBookmarks(query);
-    }, 300);
+    handleSearch(query);
   };
 
   const clearSearch = () => {
-    setSearchQuery('');
-    loadBookmarks();
+    handleSearch('');
   };
 
   const handleAddBookmark = async (e: React.FormEvent) => {
@@ -132,7 +271,10 @@ const BookmarkList = () => {
       setShowAddForm(false);
       setSuccessMessage('Bookmark added successfully!');
       setShowSuccessModal(true);
-      loadBookmarks();
+      
+      // Reload data after adding
+      loadInitialBookmarks();
+      loadAllBookmarks();
     } catch (error) {
       console.error('Error adding bookmark:', error);
       setSuccessMessage('Failed to add bookmark. Please try again.');
@@ -162,7 +304,10 @@ const BookmarkList = () => {
 
       setSuccessMessage('Bookmark deleted successfully!');
       setShowSuccessModal(true);
-      loadBookmarks();
+      
+      // Reload data after deleting
+      loadInitialBookmarks();
+      loadAllBookmarks();
     } catch (error) {
       console.error('Error deleting bookmark:', error);
       setSuccessMessage('Failed to delete bookmark. Please try again.');
@@ -209,7 +354,10 @@ const BookmarkList = () => {
       setShowEditForm(false);
       setSuccessMessage('Bookmark updated successfully!');
       setShowSuccessModal(true);
-      loadBookmarks();
+      
+      // Reload data after updating
+      loadInitialBookmarks();
+      loadAllBookmarks();
     } catch (error) {
       console.error('Error updating bookmark:', error);
       setSuccessMessage('Failed to update bookmark. Please try again.');
@@ -286,7 +434,7 @@ const BookmarkList = () => {
     );
   };
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <div className="min-h-screen bg-zinc-900 flex items-center justify-center">
         <div className="text-center">
@@ -336,14 +484,13 @@ const BookmarkList = () => {
               
               {/* Search - spans both columns on mobile (second row); middle column on large screens */}
               <div className="relative col-span-2 sm:col-span-1 sm:col-start-2 sm:row-start-1">
-                <input
-                  type="text"
-                  placeholder="Search bookmarks..."
-                  value={searchQuery}
-                  onChange={handleSearch}
-                  className="w-full px-4 py-2 bg-input-bg border border-input-border text-text-primary rounded-md focus:outline-none focus:ring-2 focus:ring-text-muted focus:border-text-muted placeholder-text-muted"
-                />
-                {searchQuery && (
+                  <input
+                    type="text"
+                    placeholder="Search bookmarks..."
+                    value={searchQuery}
+                    onChange={handleSearchInput}
+                    className="w-full px-4 py-2 bg-input-bg border border-input-border text-text-primary rounded-md focus:outline-none focus:ring-2 focus:ring-text-muted focus:border-text-muted placeholder-text-muted"
+                  />                {searchQuery && (
                   <button 
                     onClick={clearSearch} 
                     className="absolute right-2 top-2 text-zinc-400 hover:text-zinc-200"
@@ -361,30 +508,59 @@ const BookmarkList = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {Object.keys(bookmarks).length === 0 ? (
+        {Object.keys(displayedBookmarks).length === 0 ? (
           <div className="text-center py-12">
-            <div className="text-zinc-400 text-lg">No bookmarks found</div>
+            <div className="text-zinc-400 text-lg">
+              {searchQuery ? 'No bookmarks match your search' : 'No bookmarks found'}
+            </div>
+            {backgroundLoading && !searchQuery && (
+              <div className="text-zinc-500 text-sm mt-2">Loading more bookmarks...</div>
+            )}
           </div>
         ) : (
           <div className="space-y-8">
-            {Object.entries(bookmarks)
+            {Object.entries(displayedBookmarks)
               .sort(([a], [b]) => a.localeCompare(b))
               .map(([domain, domainBookmarks]) => (
                 <div key={domain} className="bg-zinc-800 rounded-lg shadow-sm border border-zinc-700">
                   <div className="bg-zinc-700 px-6 py-4 border-b border-zinc-600 rounded-t-lg">
                     <div className="flex justify-between items-center">
                       <h2 className="text-lg font-semibold text-white">{domain}</h2>
-                       <span className="bg-tag-cyan-bg text-tag-cyan text-sm px-2 py-1 rounded-full">                        {domainBookmarks.length}
+                       <span className="bg-tag-cyan-bg text-tag-cyan text-sm px-2 py-1 rounded-full">
+                        {(domainBookmarks as Bookmark[]).length}
                       </span>
                     </div>
                   </div>
                   <div className="p-6">
                     <div className="grid gap-4">
-                      {domainBookmarks.map(renderBookmarkItem)}
+                      {(domainBookmarks as Bookmark[]).map(renderBookmarkItem)}
                     </div>
                   </div>
                 </div>
               ))}
+            
+            {/* Infinite scroll trigger */}
+            {!searchQuery && visibleCount < filteredBookmarks.length && (
+              <div ref={loadMoreRef} className="text-center py-8">
+                {loadingMore ? (
+                  <div className="text-zinc-400">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-zinc-400 mx-auto mb-2"></div>
+                    Loading more bookmarks...
+                  </div>
+                ) : (
+                  <div className="text-zinc-500">Scroll to load more...</div>
+                )}
+              </div>
+            )}
+            
+            {/* Search results info */}
+            {searchQuery && (
+              <div className="text-center py-4">
+                <div className="text-zinc-500 text-sm">
+                  Showing {filteredBookmarks.length} result{filteredBookmarks.length !== 1 ? 's' : ''} for &quot;{searchQuery}&quot;
+                </div>
+              </div>
+            )}
           </div>
         )}
       </main>
