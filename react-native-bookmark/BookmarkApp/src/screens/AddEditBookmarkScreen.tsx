@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Bookmark } from '../types';
 import { bookmarkService } from '../utils/bookmarks';
+import { Colors } from '../config/colors';
 
 interface Props {
   navigation: any;
@@ -202,7 +203,7 @@ export default function AddEditBookmarkScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#18181B',
+    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -211,17 +212,17 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 16,
-    backgroundColor: '#27272A',
+    backgroundColor: Colors.headerBg,
     borderBottomWidth: 1,
-    borderBottomColor: '#3F3F46',
+    borderBottomColor: Colors.borderColor,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: Colors.textPrimary,
   },
   saveButton: {
-    backgroundColor: '#F97316',
+    backgroundColor: Colors.accentPrimary,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 6,
@@ -230,7 +231,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   saveButtonText: {
-    color: '#FFFFFF',
+    color: Colors.white,
     fontWeight: '600',
   },
   content: {
@@ -245,16 +246,16 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#D1D5DB',
+    color: Colors.textSecondary,
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#3C4043',
+    backgroundColor: Colors.inputBg,
     borderWidth: 1,
-    borderColor: '#52525B',
+    borderColor: Colors.inputBorder,
     borderRadius: 8,
     padding: 16,
-    color: '#FFFFFF',
+    color: Colors.textPrimary,
     fontSize: 16,
   },
   textArea: {

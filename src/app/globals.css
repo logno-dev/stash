@@ -3,19 +3,29 @@
 @tailwind utilities;
 
 :root {
-  --background: #1c1917;
-  --foreground: #f5f5f4;
-  --text-primary: #f5f5f4;
-  --text-secondary: #d6d3d1;
-  --text-muted: #a8a29e;
-  --accent-orange: #ea580c;
-  --accent-orange-hover: #dc2626;
-  --tag-cyan: #06b6d4;
-  --tag-cyan-bg: #164e63;
-  --tag-cyan-hover: #0891b2;
-  --border-color: #57534e;
-  --input-bg: #292524;
-  --input-border: #57534e;
+  --background: #0f1419;
+  --foreground: #e2e8f0;
+  --text-primary: #e2e8f0;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --accent-primary: #6366f1;
+  --accent-primary-hover: #4f46e5;
+  --accent-secondary: #8b5cf6;
+  --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  --accent-gradient-hover: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  --tag-blue: #3b82f6;
+  --tag-blue-bg: #1e3a8a;
+  --tag-blue-hover: #2563eb;
+  --tag-purple: #a855f7;
+  --tag-purple-bg: #581c87;
+  --tag-purple-hover: #9333ea;
+  --border-color: #334155;
+  --input-bg: #1e293b;
+  --input-border: #334155;
+  --card-bg: #1a202c;
+  --card-bg-secondary: #2d3748;
+  --card-bg-hover: #2a3441;
+  --header-bg: #1a202c;
 }
 
 body {

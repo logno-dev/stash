@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "d1f2f612-2955-4137-8bd5-530221d534c8"
+      }
+    },
+    "android": {
+      "package": "com.logno.bookmarkmanager"
+    }
+  }
+}

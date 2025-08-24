@@ -11,6 +11,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+import { Colors } from '../config/colors';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -144,7 +145,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#18181B',
+    backgroundColor: Colors.background,
   },
   scrollContainer: {
     flexGrow: 1,
@@ -152,16 +153,16 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   formContainer: {
-    backgroundColor: '#27272A',
+    backgroundColor: Colors.cardBgSecondary,
     borderRadius: 12,
     padding: 24,
     borderWidth: 1,
-    borderColor: '#3F3F46',
+    borderColor: Colors.borderColor,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: Colors.textPrimary,
     textAlign: 'center',
     marginBottom: 32,
   },
@@ -174,17 +175,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   input: {
-    backgroundColor: '#3C4043',
+    backgroundColor: Colors.inputBg,
     borderWidth: 1,
-    borderColor: '#52525B',
+    borderColor: Colors.inputBorder,
     borderRadius: 8,
     padding: 16,
-    color: '#FFFFFF',
+    color: Colors.textPrimary,
     fontSize: 16,
     marginBottom: 16,
   },
   button: {
-    backgroundColor: '#F97316',
+    backgroundColor: Colors.accentPrimary,
     borderRadius: 8,
     padding: 16,
     alignItems: 'center',
@@ -194,7 +195,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   buttonText: {
-    color: '#FFFFFF',
+    color: Colors.white,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -202,7 +203,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   switchButtonText: {
-    color: '#FB923C',
+    color: Colors.accentSecondary,
     fontSize: 14,
     fontWeight: '500',
   },

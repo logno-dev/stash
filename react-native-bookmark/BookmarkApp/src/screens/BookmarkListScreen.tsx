@@ -16,6 +16,7 @@ import { Bookmark } from '../types';
 import { bookmarkService } from '../utils/bookmarks';
 import { useAuth } from '../contexts/AuthContext';
 import MarkdownRenderer from '../components/MarkdownRenderer';
+import { Colors } from '../config/colors';
 
 interface Props {
   navigation: any;
@@ -213,13 +214,13 @@ export default function BookmarkListScreen({ navigation }: Props) {
           style={styles.editButton}
           onPress={() => navigation.navigate('AddEditBookmark', { bookmark: item })}
         >
-          <Ionicons name="pencil-outline" size={20} color="#3B82F6" />
+          <Ionicons name="pencil-outline" size={20} color={Colors.accentPrimary} />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.deleteButton}
           onPress={() => handleDeleteBookmark(item)}
         >
-          <Ionicons name="trash-outline" size={20} color="#EF4444" />
+          <Ionicons name="trash-outline" size={20} color={Colors.error} />
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -364,15 +365,15 @@ export default function BookmarkListScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#18181B',
+    backgroundColor: Colors.background,
   },
   header: {
-    backgroundColor: '#27272A',
+    backgroundColor: Colors.headerBg,
     paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#3F3F46',
+    borderBottomColor: Colors.borderColor,
   },
   headerTop: {
     flexDirection: 'row',
@@ -383,33 +384,33 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: Colors.white,
   },
   logoutButton: {
-    backgroundColor: '#EF4444',
+    backgroundColor: Colors.accentPrimary,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 6,
   },
   logoutText: {
-    color: '#FFFFFF',
+    color: Colors.white,
     fontWeight: '600',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#3C4043',
+    backgroundColor: Colors.inputBg,
     borderRadius: 8,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: '#52525B',
+    borderColor: Colors.inputBorder,
   },
   searchIcon: {
     marginRight: 8,
   },
   searchInput: {
     flex: 1,
-    color: '#FFFFFF',
+    color: Colors.textPrimary,
     fontSize: 16,
     paddingVertical: 12,
   },
@@ -417,12 +418,12 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   bookmarkItem: {
-    backgroundColor: '#27272A',
+    backgroundColor: Colors.cardBg,
     borderRadius: 8,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#3F3F46',
+    borderColor: Colors.borderColor,
     flexDirection: 'row',
   },
   bookmarkContent: {
@@ -431,12 +432,12 @@ const styles = StyleSheet.create({
   bookmarkTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: Colors.textPrimary,
     marginBottom: 8,
   },
   bookmarkUrl: {
     fontSize: 14,
-    color: '#F97316',
+    color: Colors.accentPrimary,
     marginBottom: 8,
   },
   bookmarkNotes: {
@@ -450,7 +451,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   tag: {
-    backgroundColor: '#0891B2',
+    backgroundColor: Colors.tagBlueBg,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -459,7 +460,7 @@ const styles = StyleSheet.create({
   },
   tagText: {
     fontSize: 12,
-    color: '#FFFFFF',
+    color: Colors.tagBlue,
   },
   bookmarkFooter: {
     flexDirection: 'row',
@@ -468,7 +469,7 @@ const styles = StyleSheet.create({
   },
   bookmarkDate: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: Colors.textMuted,
   },
   actionButtons: {
     flexDirection: 'column',
@@ -488,19 +489,19 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    color: '#9CA3AF',
+    color: Colors.textMuted,
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#6B7280',
+    color: Colors.textMuted,
     textAlign: 'center',
   },
   fab: {
     position: 'absolute',
     bottom: 24,
     right: 24,
-    backgroundColor: '#F97316',
+    backgroundColor: Colors.accentPrimary,
     width: 56,
     height: 56,
     borderRadius: 28,
@@ -513,17 +514,17 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   domainGroup: {
-    backgroundColor: '#27272A',
+    backgroundColor: Colors.cardBgSecondary,
     borderRadius: 8,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#3F3F46',
+    borderColor: Colors.borderColor,
   },
   domainHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#3F3F46',
+    backgroundColor: Colors.cardBg,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderTopLeftRadius: 8,
@@ -532,17 +533,17 @@ const styles = StyleSheet.create({
   domainTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: Colors.textPrimary,
   },
   domainCount: {
-    backgroundColor: '#0891B2',
+    backgroundColor: Colors.tagBlueBg,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
   },
   domainCountText: {
     fontSize: 12,
-    color: '#FFFFFF',
+    color: Colors.tagBlue,
     fontWeight: '500',
   },
   loadingContainer: {
@@ -551,7 +552,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: '#9CA3AF',
+    color: Colors.textMuted,
   },
   searchResultsInfo: {
     paddingVertical: 16,
@@ -559,7 +560,7 @@ const styles = StyleSheet.create({
   },
   searchResultsText: {
     fontSize: 14,
-    color: '#6B7280',
+    color: Colors.textMuted,
     textAlign: 'center',
   },
   filterContainer: {
@@ -577,31 +578,31 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#52525B',
-    backgroundColor: '#3C4043',
+    borderColor: Colors.inputBorder,
+    backgroundColor: Colors.inputBg,
     gap: 6,
   },
   filterButtonActive: {
-    backgroundColor: '#F97316',
-    borderColor: '#EA580C',
+    backgroundColor: Colors.accentPrimary,
+    borderColor: Colors.accentPrimaryHover,
   },
   filterButtonText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#9CA3AF',
+    color: Colors.textMuted,
   },
   filterButtonTextActive: {
-    color: '#FFFFFF',
+    color: Colors.white,
   },
   filterStatus: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: Colors.textMuted,
     flex: 1,
     textAlign: 'center',
   },
   itemCount: {
     fontSize: 12,
-    color: '#6B7280',
+    color: Colors.textMuted,
     textAlign: 'right',
   },
 });
