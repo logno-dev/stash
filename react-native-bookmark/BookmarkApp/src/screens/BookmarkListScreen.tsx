@@ -15,6 +15,7 @@ import Fuse from 'fuse.js';
 import { Bookmark } from '../types';
 import { bookmarkService } from '../utils/bookmarks';
 import { useAuth } from '../contexts/AuthContext';
+import MarkdownRenderer from '../components/MarkdownRenderer';
 
 interface Props {
   navigation: any;
@@ -29,6 +30,7 @@ export default function BookmarkListScreen({ navigation }: Props) {
   // Search states
   const [searchQuery, setSearchQuery] = useState('');
   const [fuse, setFuse] = useState<Fuse<Bookmark> | null>(null);
+  const [showNotesOnly, setShowNotesOnly] = useState(false);
   
   // Loading states
   const [refreshing, setRefreshing] = useState(false);
@@ -58,6 +60,18 @@ export default function BookmarkListScreen({ navigation }: Props) {
     }, {});
   }, []);
 
+  // Apply filters to bookmarks
+  const applyFilters = useCallback((bookmarks: Bookmark[]) => {
+    let filtered = bookmarks;
+    
+    // Apply notes-only filter
+    if (showNotesOnly) {
+      filtered = filtered.filter(bookmark => !bookmark.url || bookmark.url.trim() === '');
+    }
+    
+    return filtered;
+  }, [showNotesOnly]);
+
   useEffect(() => {
     loadBookmarks();
   }, []);
@@ -71,8 +85,9 @@ export default function BookmarkListScreen({ navigation }: Props) {
       
       // Store all bookmarks for local searching
       setAllBookmarks(bookmarksList);
-      setFilteredBookmarks(bookmarksList);
-      setBookmarkGroups(data);
+      const filteredList = applyFilters(bookmarksList);
+      setFilteredBookmarks(filteredList);
+      setBookmarkGroups(groupBookmarksByDomain(filteredList));
       
       // Initialize fuzzy search
       initializeFuse(bookmarksList);
@@ -95,15 +110,33 @@ export default function BookmarkListScreen({ navigation }: Props) {
     setSearchQuery(query);
     
     if (!query.trim()) {
-      setFilteredBookmarks(allBookmarks);
-      setBookmarkGroups(groupBookmarksByDomain(allBookmarks));
+      const filteredList = applyFilters(allBookmarks);
+      setFilteredBookmarks(filteredList);
+      setBookmarkGroups(groupBookmarksByDomain(filteredList));
     } else if (fuse) {
       const results = fuse.search(query);
       const searchResults = results.map(result => result.item);
-      setFilteredBookmarks(searchResults);
-      setBookmarkGroups(groupBookmarksByDomain(searchResults));
+      const filteredResults = applyFilters(searchResults);
+      setFilteredBookmarks(filteredResults);
+      setBookmarkGroups(groupBookmarksByDomain(filteredResults));
     }
-  }, [allBookmarks, fuse, groupBookmarksByDomain]);
+  }, [allBookmarks, fuse, groupBookmarksByDomain, applyFilters]);
+
+  // Handle filter toggle
+  const handleFilterToggle = useCallback(() => {
+    setShowNotesOnly(!showNotesOnly);
+  }, [showNotesOnly]);
+
+  // Update filters when showNotesOnly changes
+  useEffect(() => {
+    if (searchQuery) {
+      handleSearch(searchQuery);
+    } else {
+      const filteredList = applyFilters(allBookmarks);
+      setFilteredBookmarks(filteredList);
+      setBookmarkGroups(groupBookmarksByDomain(filteredList));
+    }
+  }, [showNotesOnly, searchQuery, allBookmarks, handleSearch, applyFilters, groupBookmarksByDomain]);
 
   const handleDeleteBookmark = (bookmark: Bookmark) => {
     Alert.alert(
@@ -155,9 +188,7 @@ export default function BookmarkListScreen({ navigation }: Props) {
         )}
         
         {item.notes && (
-          <Text style={styles.bookmarkNotes} numberOfLines={3}>
-            {item.notes}
-          </Text>
+          <MarkdownRenderer content={item.notes} numberOfLines={3} />
         )}
         
         {item.tags && (
@@ -227,6 +258,41 @@ export default function BookmarkListScreen({ navigation }: Props) {
             </TouchableOpacity>
           )}
         </View>
+        
+        {/* Filter toggle */}
+        <View style={styles.filterContainer}>
+          <TouchableOpacity
+            style={[
+              styles.filterButton,
+              showNotesOnly && styles.filterButtonActive
+            ]}
+            onPress={handleFilterToggle}
+          >
+            <Ionicons 
+              name="document-text-outline" 
+              size={16} 
+              color={showNotesOnly ? '#FFFFFF' : '#9CA3AF'} 
+            />
+            <Text style={[
+              styles.filterButtonText,
+              showNotesOnly && styles.filterButtonTextActive
+            ]}>
+              Notes Only
+            </Text>
+          </TouchableOpacity>
+          
+          {showNotesOnly && (
+            <Text style={styles.filterStatus}>
+              Showing items without URLs
+            </Text>
+          )}
+          
+          <Text style={styles.itemCount}>
+            {filteredBookmarks.length} items
+            {searchQuery && ` matching "${searchQuery}"`}
+            {showNotesOnly && !searchQuery && " (notes only)"}
+          </Text>
+        </View>
       </View>
 
       <ScrollView
@@ -238,7 +304,12 @@ export default function BookmarkListScreen({ navigation }: Props) {
         {Object.keys(bookmarkGroups).length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>
-              {searchQuery ? 'No bookmarks match your search' : 'No bookmarks yet'}
+              {searchQuery 
+                ? 'No bookmarks match your search' 
+                : showNotesOnly 
+                  ? 'No notes found' 
+                  : 'No bookmarks yet'
+              }
             </Text>
             {searchQuery ? (
               <Text style={styles.emptySubtext}>
@@ -275,6 +346,7 @@ export default function BookmarkListScreen({ navigation }: Props) {
           <View style={styles.searchResultsInfo}>
             <Text style={styles.searchResultsText}>
               Showing {filteredBookmarks.length} result{filteredBookmarks.length !== 1 ? 's' : ''} for "{searchQuery}"
+              {showNotesOnly && " in notes only"}
             </Text>
           </View>
         )}
@@ -368,9 +440,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   bookmarkNotes: {
-    fontSize: 14,
-    color: '#D1D5DB',
     marginBottom: 8,
+    maxHeight: 60, // Approximate height for 3 lines
+    overflow: 'hidden',
   },
   tagsContainer: {
     flexDirection: 'row',
@@ -489,5 +561,47 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6B7280',
     textAlign: 'center',
+  },
+  filterContainer: {
+    paddingTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#52525B',
+    backgroundColor: '#3C4043',
+    gap: 6,
+  },
+  filterButtonActive: {
+    backgroundColor: '#F97316',
+    borderColor: '#EA580C',
+  },
+  filterButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#9CA3AF',
+  },
+  filterButtonTextActive: {
+    color: '#FFFFFF',
+  },
+  filterStatus: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    flex: 1,
+    textAlign: 'center',
+  },
+  itemCount: {
+    fontSize: 12,
+    color: '#6B7280',
+    textAlign: 'right',
   },
 });

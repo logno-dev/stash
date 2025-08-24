@@ -32,11 +32,16 @@
               "scheme": "http"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         },
         {
           "action": "SEND",
-          "category": ["DEFAULT"],
+          "category": [
+            "DEFAULT"
+          ],
           "data": [
             {
               "mimeType": "text/plain"
@@ -45,7 +50,9 @@
         }
       ]
     },
-    "platforms": ["android"],
+    "platforms": [
+      "android"
+    ],
     "scheme": "stash",
     "plugins": [
       [
@@ -58,6 +65,11 @@
           }
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "0434bf81-937b-4bc1-827f-f9c6b49db11a"
+      }
+    }
   }
 }
