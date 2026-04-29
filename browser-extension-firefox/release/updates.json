@@ -1,0 +1,12 @@
+{
+  "addons": {
+    "stash@bunch.codes": {
+      "updates": [
+        {
+          "version": "1.0.2",
+          "update_link": "https://logno-dev.github.io/stash/browser-extension-firefox/stash-firefox-extension-1.0.2.xpi"
+        }
+      ]
+    }
+  }
+}
