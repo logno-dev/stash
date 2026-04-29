@@ -7,6 +7,7 @@ class BookmarkExtensionChrome {
         this.filteredBookmarks = [];
         this.selectedSearchIndex = 0;
         this.searchLoaded = false;
+        this.isEditingNotes = false;
         this.init();
     }
 
@@ -111,11 +112,29 @@ class BookmarkExtensionChrome {
             }
 
             this.selectedSearchIndex = Number(item.dataset.index);
-            this.openSearchResult(this.selectedSearchIndex);
+            this.searchMode = 'list';
+            this.updateSearchHint();
+            this.cancelNotesEdit();
+            this.renderSearchResults();
+            this.updateNotesPreview();
         });
+
+        document.getElementById('editNotesBtn').addEventListener('click', () => this.startNotesEdit());
+        document.getElementById('saveNotesBtn').addEventListener('click', () => this.saveEditedNotes());
+        document.getElementById('cancelNotesBtn').addEventListener('click', () => this.cancelNotesEdit());
 
         document.addEventListener('keydown', (e) => {
             if (this.activeTabType === 'search') {
+                if (this.isEditingNotes && e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    this.saveEditedNotes();
+                    return;
+                }
+
+                if (this.isEditingNotes && e.key === 'Enter') {
+                    return;
+                }
+
                 if (e.key === 'Tab') {
                     e.preventDefault();
                     this.toggleSearchMode();
@@ -270,13 +289,137 @@ class BookmarkExtensionChrome {
                 item.classList.add('selected');
             }
 
+            const notesSnippet = this.clipText((bookmark.notes || '').trim(), 140);
+
             item.innerHTML = `
                 <div class="result-title">${this.escapeHtml(bookmark.title || '(untitled)')}</div>
                 <div class="result-url">${this.escapeHtml(bookmark.url || '')}</div>
+                <div class="result-notes">${this.escapeHtml(notesSnippet || 'No notes')}</div>
             `;
 
             resultsNode.appendChild(item);
         });
+
+        this.updateNotesPreview();
+    }
+
+    clipText(text, maxLength) {
+        if (text.length <= maxLength) {
+            return text;
+        }
+
+        return `${text.slice(0, maxLength - 1)}...`;
+    }
+
+    updateNotesPreview() {
+        const previewNode = document.getElementById('bookmarkNotesPreviewContent');
+        const editButton = document.getElementById('editNotesBtn');
+        if (!previewNode) {
+            return;
+        }
+
+        const selected = this.filteredBookmarks[this.selectedSearchIndex];
+        if (!selected) {
+            this.isEditingNotes = false;
+            document.getElementById('bookmarkNotesPreviewContent').style.display = 'block';
+            document.getElementById('bookmarkNotesEditor').style.display = 'none';
+            document.getElementById('editNotesBtn').style.display = 'inline-block';
+            document.getElementById('saveNotesBtn').style.display = 'none';
+            document.getElementById('cancelNotesBtn').style.display = 'none';
+            previewNode.textContent = 'Select a bookmark to read notes';
+            editButton.disabled = true;
+            return;
+        }
+
+        editButton.disabled = false;
+        const notes = (selected.notes || '').trim();
+        if (!this.isEditingNotes) {
+            previewNode.textContent = notes || 'No notes on this bookmark';
+        }
+    }
+
+    startNotesEdit() {
+        const selected = this.filteredBookmarks[this.selectedSearchIndex];
+        if (!selected) {
+            return;
+        }
+
+        this.isEditingNotes = true;
+        const preview = document.getElementById('bookmarkNotesPreviewContent');
+        const editor = document.getElementById('bookmarkNotesEditor');
+        const editBtn = document.getElementById('editNotesBtn');
+        const saveBtn = document.getElementById('saveNotesBtn');
+        const cancelBtn = document.getElementById('cancelNotesBtn');
+
+        editor.value = selected.notes || '';
+        preview.style.display = 'none';
+        editor.style.display = 'block';
+        editBtn.style.display = 'none';
+        saveBtn.style.display = 'inline-block';
+        cancelBtn.style.display = 'inline-block';
+        editor.focus();
+        editor.setSelectionRange(editor.value.length, editor.value.length);
+    }
+
+    cancelNotesEdit() {
+        this.isEditingNotes = false;
+        const preview = document.getElementById('bookmarkNotesPreviewContent');
+        const editor = document.getElementById('bookmarkNotesEditor');
+        const editBtn = document.getElementById('editNotesBtn');
+        const saveBtn = document.getElementById('saveNotesBtn');
+        const cancelBtn = document.getElementById('cancelNotesBtn');
+
+        preview.style.display = 'block';
+        editor.style.display = 'none';
+        editBtn.style.display = 'inline-block';
+        saveBtn.style.display = 'none';
+        cancelBtn.style.display = 'none';
+        this.updateNotesPreview();
+    }
+
+    async saveEditedNotes() {
+        const selected = this.filteredBookmarks[this.selectedSearchIndex];
+        if (!selected) {
+            return;
+        }
+
+        const editor = document.getElementById('bookmarkNotesEditor');
+        const updatedNotes = editor.value.trim();
+
+        try {
+            const token = await this.authenticate();
+            const settings = await chrome.storage.sync.get(['serverUrl']);
+            const response = await fetch(`${settings.serverUrl}/api/bookmarks/${selected.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    url: selected.url,
+                    notes: updatedNotes,
+                    tags: selected.tags || ''
+                }),
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to update notes');
+            }
+
+            selected.notes = updatedNotes;
+            const cacheMatch = this.bookmarksCache.find((bookmark) => bookmark.id === selected.id);
+            if (cacheMatch) {
+                cacheMatch.notes = updatedNotes;
+            }
+
+            this.cancelNotesEdit();
+            this.renderSearchResults();
+            this.showStatus('Notes updated', 'success');
+        } catch (error) {
+            console.error('Error updating notes:', error);
+            this.showStatus(error.message || 'Failed to update notes', 'error');
+        }
     }
 
     escapeHtml(text) {
@@ -323,6 +466,7 @@ class BookmarkExtensionChrome {
 
         this.selectedSearchIndex = (this.selectedSearchIndex + direction + count) % count;
         this.renderSearchResults();
+        this.updateNotesPreview();
 
         const selected = document.querySelector('#bookmarkSearchResults li.selected');
         if (selected) {

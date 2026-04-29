@@ -1,5 +1,6 @@
-// Background script for Firefox extension
-browser.commands.onCommand.addListener((command) => {
+const ext = globalThis.browser || globalThis.chrome;
+
+ext.commands.onCommand.addListener((command) => {
     let popupUrl = null;
 
     if (command === "open-notes-tab") {
@@ -12,14 +13,14 @@ browser.commands.onCommand.addListener((command) => {
         return;
     }
 
-    browser.browserAction.setPopup({ popup: popupUrl });
+    ext.action.setPopup({ popup: popupUrl });
 
-    browser.browserAction.openPopup().then(() => {
+    ext.action.openPopup().then(() => {
         setTimeout(() => {
-            browser.browserAction.setPopup({ popup: "popup.html" });
+            ext.action.setPopup({ popup: "popup.html" });
         }, 100);
     }).catch((error) => {
         console.log("Could not open popup programmatically:", error);
-        browser.browserAction.setPopup({ popup: "popup.html" });
+        ext.action.setPopup({ popup: "popup.html" });
     });
 });

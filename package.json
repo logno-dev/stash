@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "release:firefox": "node scripts/release-firefox-extension.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
@@ -42,6 +43,7 @@
     "eslint-config-next": "15.4.5",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.19",
-    "typescript": "5.8.3"
+    "typescript": "5.8.3",
+    "web-ext": "^10.1.0"
   }
 }

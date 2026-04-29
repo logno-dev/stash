@@ -65,3 +65,18 @@ Firefox-compatible version of the Bookmark Manager browser extension.
 - Check the server logs for any error messages
 - Verify the API endpoint is responding correctly
 - Try testing the API directly with curl or a REST client
+
+## Self-Hosted Auto-Updates
+
+To support permanent installs that auto-update, use Mozilla unlisted signing and host the release files.
+
+1. Set `browser_specific_settings.gecko.update_url` in `browser-extension-firefox/manifest.json` to your public `updates.json` URL.
+2. Set env vars:
+   - `WEB_EXT_API_KEY` (AMO JWT issuer, starts with `user:`)
+   - `WEB_EXT_API_SECRET` (AMO JWT secret)
+3. Run:
+   - `npm run release:firefox`
+4. Publish `browser-extension-firefox/release/` to your static host.
+5. Commit and push the updated `manifest.json` and `browser-extension-firefox/release/` files.
+
+After users install the signed `.xpi`, Firefox checks `update_url` and pulls future versions from your hosted `updates.json`.
