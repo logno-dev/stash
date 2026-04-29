@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { and, desc, eq, isNotNull } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 
 import { verifyToken } from '@/lib/auth';
 import { db } from '@/lib/db';
@@ -54,14 +54,11 @@ export async function GET(request: NextRequest) {
         createdAt: bookmarks.createdAt,
       })
       .from(bookmarks)
-      .where(and(eq(bookmarks.userId, user.id), isNotNull(bookmarks.url)))
+      .where(eq(bookmarks.userId, user.id))
       .orderBy(desc(bookmarks.createdAt))
       .limit(limit);
 
-    return NextResponse.json(
-      { bookmarks: results.filter((bookmark) => Boolean(bookmark.url)) },
-      { headers: CORS_HEADERS }
-    );
+    return NextResponse.json({ bookmarks: results }, { headers: CORS_HEADERS });
   } catch (error: any) {
     if (error.message === 'No token provided' || error.message === 'Invalid token') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: CORS_HEADERS });

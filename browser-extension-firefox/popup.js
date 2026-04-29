@@ -478,6 +478,7 @@ class BookmarkExtensionFirefox {
         const bookmark = this.filteredBookmarks[index];
 
         if (!bookmark || !bookmark.url) {
+            this.showStatus('Selected item has no URL to open', 'error');
             return;
         }
 
