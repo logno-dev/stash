@@ -67,13 +67,11 @@ const Login = () => {
 
         if (!response.ok) {
           setError(data.error || 'Registration failed');
-          setLoading(false);
           return;
         }
 
         // Registration successful, show success message
         setError('');
-        setLoading(false);
         
         if (data.requiresVerification) {
           setModalConfig({
@@ -98,7 +96,6 @@ const Login = () => {
         return;
       } catch (error) {
         setError('Registration failed');
-        setLoading(false);
         setModalConfig({
           title: 'Registration Failed',
           message: 'An unexpected error occurred during registration. Please try again.',
@@ -106,6 +103,8 @@ const Login = () => {
           onConfirm: undefined
         });
         setShowModal(true);
+      } finally {
+        setLoading(false);
       }
     } else {
       try {
@@ -124,14 +123,17 @@ const Login = () => {
 
         if (!response.ok) {
           setError(data.error || 'Login failed');
-          setLoading(false);
+          return;
+        }
+
+        if (!data?.token || !data?.user) {
+          setError('Login response was incomplete. Please try again.');
           return;
         }
 
         login(data.token, data.user);
       } catch (error) {
         setError('Login failed');
-        setLoading(false);
         setModalConfig({
           title: 'Login Failed',
           message: 'An unexpected error occurred during login. Please try again.',
@@ -139,14 +141,16 @@ const Login = () => {
           onConfirm: undefined
         });
         setShowModal(true);
+      } finally {
+        setLoading(false);
       }
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 flex items-center justify-center p-4">
-      <div className="border border-slate-700 rounded-lg shadow-2xl p-8 w-full max-w-md" style={{backgroundColor: 'var(--card-bg-secondary)'}}>
-        <div className="text-center mb-8">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: 'var(--background)' }}>
+      <div className="border border-slate-700/80 rounded-lg shadow-lg p-6 w-full max-w-sm" style={{backgroundColor: 'var(--card-bg-secondary)'}}>
+        <div className="text-center mb-6">
           <svg 
             width="48" 
             height="48" 
@@ -158,8 +162,8 @@ const Login = () => {
               <g transform="matrix(0.1,0,0,-0.1,0,1715)">
                     <path 
                       d="M824,15376C655,15291 581,15145 608,14954C623,14856 659,14733 701,14642C717,14607 730,14577 730,14575C730,14564 810,14436 858,14370C1047,14110 1342,13925 1710,13836C2073,13749 2618,13749 3070,13836C3168,13855 3362,13916 3422,13946C3479,13975 3490,13975 3539,13950C3849,13792 4584,13724 5105,13806C5713,13902 6135,14233 6315,14755C6382,14948 6386,15099 6328,15214C6280,15308 6125,15410 6028,15410C5987,15410 5978,15406 5956,15378C5942,15359 5927,15319 5921,15286C5900,15173 5912,15143 5943,15230C5954,15259 5971,15287 5987,15297C6026,15323 6057,15299 6103,15211C6136,15147 6140,15130 6140,15067C6140,14949 6092,14868 5975,14784C5860,14703 5735,14658 5616,14657C5535,14656 5487,14674 5155,14830C5111,14851 5017,14896 4945,14930C4803,14998 4686,15053 4570,15107C4472,15152 4347,15193 4235,15215C4164,15229 4118,15231 4015,15227C3844,15219 3727,15185 3600,15107C3470,15027 3493,15030 3411,15084C3323,15143 3200,15193 3090,15216C2944,15245 2748,15229 2565,15172C2491,15149 2351,15085 1975,14905C1744,14794 1569,14715 1490,14684C1391,14646 1309,14647 1187,14688C1041,14737 924,14823 865,14924C806,15025 825,15177 910,15272C945,15311 949,15314 973,15303C999,15291 1040,15225 1040,15195C1040,15186 1045,15182 1050,15185C1075,15201 1050,15337 1013,15380C977,15423 916,15422 824,15376Z" 
-                      fill="#6366f1" 
-                      stroke="#8b5cf6" 
+                       fill="var(--text-primary)" 
+                       stroke="var(--text-secondary)" 
                       strokeWidth="16"
                     />              </g>
             </g>
@@ -169,14 +173,14 @@ const Login = () => {
           </h1>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {isRegister && (
             <>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium text-slate-300 mb-2">
-                    First Name
-                  </label>
+               <div className="grid sm:grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="firstName" className="block text-sm font-medium text-slate-300 mb-1">
+                First Name
+              </label>
                   <input
                     type="text"
                     id="firstName"
@@ -188,10 +192,10 @@ const Login = () => {
                     required
                   />
                 </div>
-                <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium text-slate-300 mb-2">
-                    Last Name
-                  </label>
+            <div>
+              <label htmlFor="lastName" className="block text-sm font-medium text-slate-300 mb-1">
+                Last Name
+              </label>
                   <input
                     type="text"
                     id="lastName"
@@ -208,7 +212,7 @@ const Login = () => {
           )}
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">
+            <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-1">
               Email
             </label>
             <input
@@ -218,14 +222,14 @@ const Login = () => {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
               autoComplete="email"
-              className="w-full px-3 py-2 bg-input-bg border border-input-border text-text-primary rounded-md focus:outline-none focus:ring-2 focus:ring-accent-primary focus:border-accent-primary placeholder-text-muted"
+               className="w-full px-3 py-2 bg-input-bg border border-input-border text-text-primary rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 placeholder-text-muted"
               disabled={loading}
               required
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-2">
+            <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-1">
               Password
             </label>
             <input
@@ -235,7 +239,7 @@ const Login = () => {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
               autoComplete={isRegister ? "new-password" : "current-password"}
-              className="w-full px-3 py-2 bg-input-bg border border-input-border text-text-primary rounded-md focus:outline-none focus:ring-2 focus:ring-accent-primary focus:border-accent-primary placeholder-text-muted"
+               className="w-full px-3 py-2 bg-input-bg border border-input-border text-text-primary rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 placeholder-text-muted"
               disabled={loading}
               required
             />
@@ -243,7 +247,7 @@ const Login = () => {
 
           {isRegister && (
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-300 mb-2">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-300 mb-1">
                 Confirm Password
               </label>
               <input
@@ -253,7 +257,7 @@ const Login = () => {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirm your password"
                 autoComplete="new-password"
-                className="w-full px-3 py-2 bg-input-bg border border-input-border text-text-primary rounded-md focus:outline-none focus:ring-2 focus:ring-accent-primary focus:border-accent-primary placeholder-text-muted"
+               className="w-full px-3 py-2 bg-input-bg border border-input-border text-text-primary rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 placeholder-text-muted"
                 disabled={loading}
                 required
               />
@@ -261,14 +265,14 @@ const Login = () => {
           )}
 
           {error && (
-            <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-md">
-              {error}
-            </div>
+          <div className="bg-slate-800 border border-slate-600 text-text-secondary px-3 py-2 rounded-md text-sm">
+            {error}
+          </div>
           )}
 
-          <button 
+          <button
             type="submit" 
-            className="w-full bg-gradient-to-r from-accent-primary to-accent-secondary text-white py-2 px-4 rounded-md hover:shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-accent-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            className="w-full bg-slate-700 text-white py-2 px-4 rounded-md hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             disabled={loading}
           >
             {loading ? (isRegister ? 'Creating Account...' : 'Logging in...') : (isRegister ? 'Create Account' : 'Login')}

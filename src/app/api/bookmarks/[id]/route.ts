@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { bookmarks } from '@/lib/db/schema';
 import { verifyToken } from '@/lib/auth';
-import { fallbackVerifyToken } from '@/lib/fallback-auth';
 import { extractPageTitle, extractDomain, generateNoteTitle } from '@/lib/utils';
 import { eq } from 'drizzle-orm';
 
@@ -14,24 +13,14 @@ async function requireAuth(request: NextRequest) {
     throw new Error('No token provided');
   }
 
-  try {
-    // First try the main auth service
-    const user = await verifyToken(token);
-    console.log('Token verified with main auth service');
-    return user;
-  } catch (authError) {
-    console.log('Main auth service failed, trying fallback auth');
     try {
-      // Fallback to local auth
-      const user = await fallbackVerifyToken(token);
-      console.log('Token verified with fallback auth');
+      const user = await verifyToken(token);
       return user;
-    } catch (fallbackError) {
-      console.error('Both auth systems failed:', { authError, fallbackError });
+    } catch (authError) {
+      console.error('Auth verification failed:', authError);
       throw new Error('Invalid token');
     }
   }
-}
 
 export async function PUT(
   request: NextRequest,

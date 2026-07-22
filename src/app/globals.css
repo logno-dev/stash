@@ -3,34 +3,41 @@
 @tailwind utilities;
 
 :root {
-  --background: #0f1419;
-  --foreground: #e2e8f0;
-  --text-primary: #e2e8f0;
-  --text-secondary: #cbd5e1;
-  --text-muted: #94a3b8;
-  --accent-primary: #6366f1;
-  --accent-primary-hover: #4f46e5;
-  --accent-secondary: #8b5cf6;
-  --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  --accent-gradient-hover: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-  --tag-blue: #3b82f6;
-  --tag-blue-bg: #1e3a8a;
-  --tag-blue-hover: #2563eb;
-  --tag-purple: #a855f7;
-  --tag-purple-bg: #581c87;
-  --tag-purple-hover: #9333ea;
+  --background: #0b1016;
+  --foreground: #d9e2ef;
+  --text-primary: #d9e2ef;
+  --text-secondary: #adb9ca;
+  --text-muted: #8a95a7;
+  --accent-primary: #64748b;
+  --accent-primary-hover: #94a3b8;
+  --accent-secondary: #cbd5e1;
+  --accent-gradient: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
+  --accent-gradient-hover: linear-gradient(135deg, #94a3b8 0%, #cbd5e1 100%);
+  --tag-blue: #cbd5e1;
+  --tag-blue-bg: #2f3a48;
+  --tag-blue-hover: #94a3b8;
+  --tag-purple: #cbd5e1;
+  --tag-purple-bg: #2f3a48;
+  --tag-purple-hover: #94a3b8;
   --border-color: #334155;
-  --input-bg: #1e293b;
+  --input-bg: #151c26;
   --input-border: #334155;
-  --card-bg: #1a202c;
-  --card-bg-secondary: #2d3748;
-  --card-bg-hover: #2a3441;
-  --header-bg: #1a202c;
+  --card-bg: #121a24;
+  --card-bg-secondary: #171f2b;
+  --card-bg-hover: #1c2735;
+  --header-bg: #111824;
+  --success: #94a3b8;
+  --warning: #94a3b8;
+  --danger: #94a3b8;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Manrope', 'Inter', Arial, Helvetica, sans-serif;
   min-height: 100vh;
+}
+
+* {
+  box-sizing: border-box;
 }

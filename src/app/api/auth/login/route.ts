@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { loginUser } from '@/lib/auth';
-import { fallbackLoginUser } from '@/lib/fallback-auth';
 
 // Handle CORS preflight requests
 export async function OPTIONS() {
@@ -34,6 +33,8 @@ export async function POST(request: NextRequest) {
       
       return NextResponse.json({
         token: authResponse.accessToken,
+        accessToken: authResponse.accessToken,
+        refreshToken: authResponse.refreshToken,
         user: authResponse.user,
         message: 'Login successful'
       }, {
@@ -44,28 +45,29 @@ export async function POST(request: NextRequest) {
         },
       });
     } catch (authError: any) {
-      console.log('Auth service failed, using fallback authentication');
-      
-      // Use fallback authentication
-      const fallbackResponse = await fallbackLoginUser({ email: loginEmail, password });
-      
-      return NextResponse.json({
-        token: fallbackResponse.accessToken,
-        user: fallbackResponse.user,
-        message: 'Login successful (using fallback auth)'
-      }, {
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        },
-      });
+      if (authError?.status === 401) {
+        return NextResponse.json(
+          { error: authError.message || 'Invalid credentials' },
+          {
+            status: 401,
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'POST, OPTIONS',
+              'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            },
+          }
+        );
+      }
+
+      throw authError;
     }
   } catch (error: unknown) {
     console.error('Login error:', error);
-    
-    if (error && typeof error === 'object' && 'response' in error && 
-        (error as any).response?.status === 401) {
+
+    if (
+      (error && typeof error === 'object' && 'response' in error && (error as any).response?.status === 401) ||
+      (error as any)?.status === 401
+    ) {
       return NextResponse.json(
         { error: 'Invalid credentials' },
         { 

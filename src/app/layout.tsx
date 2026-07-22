@@ -1,15 +1,20 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Manrope } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 
-const inter = Inter({
+const manrope = Manrope({
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
   title: "Stash - Bookmark Manager",
   description: "A modern bookmark manager built with Next.js",
+  manifest: "/manifest.webmanifest",
+  themeColor: "#0b1016",
+  icons: {
+    icon: "/pwa-icon.svg",
+  },
 };
 
 export default function RootLayout({
@@ -19,7 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} antialiased`}>
+      <body className={`${manrope.className} antialiased`}>
         <AuthProvider>
           {children}
         </AuthProvider>

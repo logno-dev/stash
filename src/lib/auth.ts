@@ -1,8 +1,12 @@
-import axios from 'axios';
+import bcrypt from 'bcryptjs';
+import { randomUUID } from 'crypto';
+import jwt from 'jsonwebtoken';
+import { eq } from 'drizzle-orm';
+import { db } from './db';
+import { users } from './db/schema';
 
-const AUTH_BASE_URL = process.env.AUTH_BASE_URL || 'https://your-auth-server.com/api';
-const AUTH_API_KEY = process.env.AUTH_API_KEY!;
-const AUTH_APP_ID = process.env.AUTH_APP_ID!;
+const JWT_SECRET = process.env.AUTH_JWT_SECRET || process.env.NEXTAUTH_SECRET || 'replace-this-with-a-strong-secret';
+const APP_ID = process.env.APP_ID || process.env.AUTH_APP_ID || 'local';
 
 export interface User {
   id: string;
@@ -37,97 +41,153 @@ export interface LoginData {
   password: string;
 }
 
-const authApi = axios.create({
-  baseURL: AUTH_BASE_URL,
-  headers: {
-    'x-api-key': AUTH_API_KEY,
-    'Content-Type': 'application/json',
-  },
-});
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
+function createAuthError(message: string, status = 500): Error {
+  const error = new Error(message);
+  (error as any).status = status;
+  return error;
+}
+
+function createToken(user: Omit<User, 'appId'>) {
+  return jwt.sign(
+    {
+      sub: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      appId: APP_ID,
+    },
+    JWT_SECRET,
+    {
+      expiresIn: '7d',
+    }
+  );
+}
+
+function toPublicUser(row: typeof users.$inferSelect): User {
+  return {
+    id: row.id,
+    email: row.email,
+    firstName: row.firstName,
+    lastName: row.lastName,
+    role: row.role,
+    appId: row.appId || APP_ID,
+  };
+}
 
 export async function registerUser(data: RegisterData): Promise<RegisterResponse> {
-  console.log('Attempting registration with:', {
-    baseURL: AUTH_BASE_URL,
-    fullURL: `${AUTH_BASE_URL}/auth/register`,
-    appId: AUTH_APP_ID,
-    email: data.email,
-    headers: {
-      'x-api-key': AUTH_API_KEY ? 'SET' : 'NOT SET',
-      'Content-Type': 'application/json'
-    }
-  });
-  
-  try {
-    const response = await authApi.post('/auth/register', {
-      ...data,
-      appId: AUTH_APP_ID,
-    });
-    console.log('Registration successful:', response.data);
-    return response.data;
-  } catch (error: any) {
-    console.error('Registration API error:', {
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data,
-      url: error.config?.url,
-      method: error.config?.method,
-      fullURL: error.config?.baseURL + error.config?.url,
-      requestData: error.config?.data
-    });
-    throw error;
+  if (!data.email || !data.password || !data.confirmPassword || !data.firstName || !data.lastName) {
+    throw createAuthError('All fields are required', 400);
   }
+
+  if (data.password !== data.confirmPassword) {
+    throw createAuthError('Passwords do not match', 400);
+  }
+
+  const email = normalizeEmail(data.email);
+
+  const existing = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
+
+  if (existing.length > 0) {
+    throw createAuthError('An account with this email already exists. Please try logging in instead.', 409);
+  }
+
+  const passwordHash = await bcrypt.hash(data.password, 12);
+  const userId = randomUUID();
+
+  const [createdUser] = await db
+    .insert(users)
+    .values({
+      id: userId,
+      email,
+      passwordHash,
+      firstName: data.firstName.trim(),
+      lastName: data.lastName.trim(),
+      role: 'user',
+      appId: APP_ID,
+    })
+    .returning({
+      id: users.id,
+    });
+
+  return {
+    message: 'User registered successfully',
+    userId: createdUser?.id || userId,
+  };
 }
 
 export async function loginUser(data: LoginData): Promise<AuthResponse> {
-  console.log('Attempting login with:', {
-    url: `${AUTH_BASE_URL}/auth/login`,
-    appId: AUTH_APP_ID,
-    email: data.email
-  });
-  
-  try {
-    const response = await authApi.post('/auth/login', {
-      ...data,
-      appId: AUTH_APP_ID,
-    });
-    return response.data;
-  } catch (error: any) {
-    console.error('Login API error:', {
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data,
-      url: error.config?.url,
-      method: error.config?.method
-    });
-    throw error;
+  const email = normalizeEmail(data.email);
+
+  if (!email || !data.password) {
+    throw createAuthError('Email and password are required', 400);
   }
+
+  const userRows = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
+
+  const userRow = userRows[0];
+  if (!userRow) {
+    throw createAuthError('Invalid credentials', 401);
+  }
+
+  const validPassword = await bcrypt.compare(data.password, userRow.passwordHash);
+  if (!validPassword) {
+    throw createAuthError('Invalid credentials', 401);
+  }
+
+  const user = toPublicUser(userRow);
+  const accessToken = createToken(user);
+
+  return {
+    accessToken,
+    refreshToken: accessToken,
+    user,
+  };
 }
 
 export async function verifyToken(token: string): Promise<User> {
-  console.log('Verifying token with auth service...');
   try {
-    const response = await authApi.get('/user/profile', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    console.log('Token verification successful:', response.data);
-    return response.data.user;
+    const decoded = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload & {
+      sub?: string;
+    };
+
+    if (!decoded.sub) {
+      throw createAuthError('Invalid token payload', 401);
+    }
+
+    const userRows = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, decoded.sub))
+      .limit(1);
+
+    const userRow = userRows[0];
+    if (!userRow) {
+      throw createAuthError('User not found', 401);
+    }
+
+    return toPublicUser(userRow);
   } catch (error: any) {
-    console.error('Token verification failed:', {
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data
-    });
-    throw error;
+    if (error.status === 401) {
+      throw error;
+    }
+
+    throw createAuthError('Invalid token', 401);
   }
 }
 
 export async function getUserProfile(token: string): Promise<User> {
-  const response = await authApi.get('/user/profile', {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  return response.data.user;
+  return verifyToken(token);
 }

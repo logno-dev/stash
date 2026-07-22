@@ -10,7 +10,11 @@ interface PopoverProps {
 
 const Popover: React.FC<PopoverProps> = ({ content, children, className = '' }) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const [position, setPosition] = useState({
+    top: 0,
+    left: 0,
+    maxWidth: 0,
+  });
   const triggerRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
@@ -19,10 +23,16 @@ const Popover: React.FC<PopoverProps> = ({ content, children, className = '' }) 
       const rect = triggerRef.current.getBoundingClientRect();
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
       const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+      const safeWidth = Math.min(360, Math.max(140, window.innerWidth - 24));
+      const left = Math.min(
+        Math.max(rect.left + scrollLeft, scrollLeft + 12),
+        scrollLeft + window.innerWidth - safeWidth - 12,
+      );
       
       setPosition({
         top: rect.bottom + scrollTop + 8,
-        left: rect.left + scrollLeft
+        left,
+        maxWidth: safeWidth,
       });
       setIsVisible(true);
     }
@@ -57,15 +67,19 @@ const Popover: React.FC<PopoverProps> = ({ content, children, className = '' }) 
         {children}
       </div>
       
-      {isVisible && (
+        {isVisible && (
         <div
           ref={popoverRef}
-          className="fixed z-50 bg-zinc-800 border border-zinc-600 rounded-lg shadow-lg p-3 max-w-md break-all text-sm text-zinc-200"
-          style={{
-            top: `${position.top}px`,
-            left: `${position.left}px`,
-          }}
-        >
+          className="fixed z-50 bg-card-bg border border-slate-600 rounded-md shadow-md p-3 text-sm text-text-secondary"
+           style={{
+             top: `${position.top}px`,
+             left: `${position.left}px`,
+              width: `${position.maxWidth}px`,
+              maxWidth: `${position.maxWidth}px`,
+              wordBreak: 'break-all',
+              whiteSpace: 'normal',
+            }}
+         >
           {content}
         </div>
       )}

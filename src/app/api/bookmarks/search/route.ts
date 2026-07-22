@@ -4,7 +4,6 @@ import { desc, eq } from 'drizzle-orm';
 import { verifyToken } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { bookmarks } from '@/lib/db/schema';
-import { fallbackVerifyToken } from '@/lib/fallback-auth';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -30,7 +29,7 @@ async function requireAuth(request: NextRequest) {
   try {
     return await verifyToken(token);
   } catch {
-    return await fallbackVerifyToken(token);
+    throw new Error('Invalid token');
   }
 }
 

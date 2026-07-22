@@ -1,10 +1,10 @@
 # Stash - Next.js Bookmark Manager
 
-A modern bookmark manager built with Next.js, Drizzle ORM, Turso (libsql), and auth.bunch.codes authentication.
+A modern bookmark manager built with Next.js, Drizzle ORM, Turso (libsql), and local database-backed authentication.
 
 ## Features
 
-- 🔐 Authentication via auth.bunch.codes
+- 🔐 Local authentication with bcrypt + JWT
 - 📚 Bookmark management with URL title extraction
 - 🏷️ Tag support for organizing bookmarks
 - 🔍 Full-text search across bookmarks
@@ -18,17 +18,17 @@ A modern bookmark manager built with Next.js, Drizzle ORM, Turso (libsql), and a
 - **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
 - **Backend**: Next.js API Routes
 - **Database**: Turso (libsql) with Drizzle ORM
-- **Authentication**: auth.bunch.codes
+- **Authentication**: local users table + JWT
 - **Deployment**: Vercel-ready
 
 ## Setup Instructions
 
 ### 1. Environment Variables
 
-Copy the `.env.example` file to `.env.local` and fill in your credentials:
+Set environment variables in `.env.local` or `.env` and fill in your credentials:
 
 ```bash
-cp .env.example .env.local
+cp .env .env.local
 ```
 
 Required environment variables:
@@ -38,10 +38,9 @@ Required environment variables:
 TURSO_DATABASE_URL=your_turso_database_url_here
 TURSO_AUTH_TOKEN=your_turso_auth_token_here
 
-# Auth.bunch.codes Configuration
-AUTH_API_KEY=your_auth_api_key_here
-AUTH_APP_ID=your_auth_app_id_here
-AUTH_BASE_URL=https://your-auth-server.com/api
+# Local Auth Configuration
+AUTH_JWT_SECRET=your_long_random_secret
+APP_ID=local
 
 # Next.js Configuration
 NEXTAUTH_SECRET=your_nextauth_secret_here
@@ -63,52 +62,46 @@ NEXTAUTH_URL=http://localhost:3000
 
 3. Generate and push the database schema:
    ```bash
-   npm run db:generate
-   npm run db:push
-   ```
+    npm run db:generate
+    npm run db:push
+    ```
 
-### 3. Auth.bunch.codes Setup
+   Existing databases with legacy `bookmarks` data usually need ownership repair before this step. If your table only has one user row, `npm run create:admin` can claim orphaned bookmarks to that user automatically.
 
-1. Contact your system administrator to register your app
-2. Get your API key, App ID, and base URL
-3. Update your `.env.local` file with these credentials
+### 3. Verify Local Auth
 
-**Note**: If you encounter a 405 error during registration/login, it means the auth.bunch.codes service is not properly configured. The application includes a fallback authentication system that will automatically activate when the main auth service is unavailable. This allows you to test the application functionality while setting up the proper auth service.
+Use this endpoint to confirm database connectivity and users table availability:
 
-#### Troubleshooting Auth Issues
+```bash
+curl http://localhost:3000/api/test-auth
+```
 
-If you see errors like "Request failed with status code 405":
+### 4. Create Your First Admin User
 
-1. **Check your environment variables** - Make sure `AUTH_BASE_URL`, `AUTH_API_KEY`, and `AUTH_APP_ID` are correctly set
-   - `AUTH_BASE_URL` should be `https://auth.bunch.codes/api` (note the `/api` suffix)
-   - `AUTH_API_KEY` should be your actual API key
-   - `AUTH_APP_ID` should be your registered app ID
+Use the bootstrap script to create an admin account directly in the local `users` table:
 
-2. **Test the auth service** - Visit `http://localhost:3000/api/test-auth` to test connectivity
+```bash
+npm run create:admin -- \
+  --email admin@example.com \
+  --password 'StrongPassword123!'
+```
 
-3. **Verify the auth service is running** - The auth.bunch.codes service needs to be accessible at the URL you specified
+  Optional:
 
-4. **Use fallback authentication** - The app will automatically fall back to a local authentication system for testing
+  - `--firstName` (default: `Admin`)
+  - `--lastName` (default: `User`)
+  - `--role` (default: `admin`)
+  - `--update` (overwrite password for an existing email)
+  - `--claim` (claim unassigned bookmarks to the target user when multiple users exist)
+  - `--no-claim` (skip bookmark claiming)
 
-5. **Check the console logs** - The application logs detailed information about auth requests to help with debugging
-
-#### Fallback Authentication
-
-When the main auth service is unavailable, the application uses an in-memory authentication system that:
-- Stores users temporarily (data is lost on server restart)
-- Uses JWT tokens for session management
-- Provides the same API interface as the main auth service
-- Shows "(using fallback auth)" in success messages
-
-This allows you to fully test the bookmark functionality while setting up the proper authentication service.
-
-### 4. Install Dependencies
+### 5. Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 5. Run the Development Server
+### 6. Run the Development Server
 
 ```bash
 npm run dev
@@ -122,6 +115,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - `npm run build` - Build for production
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
+- `npm run create:admin` - Create/update admin users
 - `npm run db:generate` - Generate database migrations
 - `npm run db:migrate` - Run database migrations
 - `npm run db:push` - Push schema changes to database
@@ -142,7 +136,22 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Database Schema
 
-The application uses a single `bookmarks` table with the following structure:
+The app uses two core tables:
+
+```sql
+CREATE TABLE users (
+  id TEXT PRIMARY KEY NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'user',
+  app_id TEXT NOT NULL DEFAULT 'local',
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+`bookmarks` table:
 
 ```sql
 CREATE TABLE bookmarks (
@@ -152,6 +161,7 @@ CREATE TABLE bookmarks (
   notes TEXT DEFAULT '',
   tags TEXT DEFAULT '',
   domain TEXT NOT NULL,
+  user_id TEXT NOT NULL,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 ```

@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth';
-import { fallbackVerifyToken } from '@/lib/fallback-auth';
+
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: CORS_HEADERS,
+  });
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,41 +22,22 @@ export async function GET(request: NextRequest) {
     if (!token) {
       return NextResponse.json(
         { error: 'No token provided' },
-        { status: 401 }
+        { status: 401, headers: CORS_HEADERS }
       );
     }
 
-    try {
-      const user = await verifyToken(token);
-      
-      return NextResponse.json({
-        authenticated: true,
-        user,
-      });
-    } catch (authError: any) {
-      console.log('Main auth service failed, trying fallback authentication');
-      try {
-        // Use fallback authentication
-        const user = await fallbackVerifyToken(token);
-        
-        return NextResponse.json({
-          authenticated: true,
-          user,
-        });
-      } catch (fallbackError) {
-        console.error('Both auth systems failed:', { authError, fallbackError });
-        return NextResponse.json(
-          { error: 'Invalid token' },
-          { status: 401 }
-        );
-      }
-    }
+    const user = await verifyToken(token);
+
+    return NextResponse.json({
+      authenticated: true,
+      user,
+    }, { headers: CORS_HEADERS });
   } catch (error: any) {
     console.error('Token verification error:', error);
     
     return NextResponse.json(
       { error: 'Invalid token' },
-      { status: 401 }
+      { status: 401, headers: CORS_HEADERS }
     );
   }
 }
