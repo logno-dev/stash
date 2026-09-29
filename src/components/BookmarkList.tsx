@@ -490,7 +490,7 @@ const BookmarkList = () => {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--background)' }}>
+    <div className="min-h-screen lg:flex lg:h-screen lg:flex-col lg:overflow-hidden" style={{ backgroundColor: 'var(--background)' }}>
       <header className="sticky top-0 z-40 border-b border-slate-700/80" style={{ backgroundColor: 'var(--header-bg)' }}>
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-5 lg:px-6">
           <div className="py-2">
@@ -558,7 +558,7 @@ const BookmarkList = () => {
       </header>
 
       {/* Filter section */}
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-5 lg:px-6">
+      <div className="mx-auto w-full max-w-screen-2xl shrink-0 px-4 sm:px-5 lg:px-6">
         <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-2">
             <button
@@ -599,7 +599,7 @@ const BookmarkList = () => {
         </div>
       </div>
 
-      <main className="max-w-screen-2xl mx-auto px-4 sm:px-5 lg:px-6 py-4">
+      <main className="w-full min-h-0 flex-1 pt-3 lg:pt-2">
         {Object.keys(displayedBookmarks).length === 0 ? (
           <div className="text-center py-12">
             <div className="text-slate-400 text-lg">
@@ -615,8 +615,8 @@ const BookmarkList = () => {
             )}
           </div>
         ) : (
-          <div className="lg:grid lg:h-[calc(100dvh-9.5rem)] lg:grid-cols-[22rem_minmax(0,1fr)] lg:gap-4">
-            <section className={`${showMobileDetail ? 'hidden lg:block' : 'block'} overflow-hidden rounded-lg border border-slate-700/80 bg-card-bg-secondary lg:overflow-y-auto`}>
+          <div className="lg:grid lg:h-full lg:grid-cols-[22rem_minmax(0,1fr)]">
+            <section className={`${showMobileDetail ? 'hidden lg:block' : 'block'} overflow-hidden border-t border-slate-700/80 bg-card-bg-secondary lg:overflow-y-auto`}>
               <div className="space-y-1 p-2">
                 {Object.entries(displayedBookmarks)
                   .sort(([a], [b]) => a.localeCompare(b))
@@ -644,7 +644,7 @@ const BookmarkList = () => {
               </div>
             </section>
 
-            <section className={`${showMobileDetail ? 'block' : 'hidden lg:block'} min-w-0 overflow-hidden rounded-lg border border-slate-700/80 bg-card-bg-secondary`}>
+            <section className={`${showMobileDetail ? 'block' : 'hidden lg:block'} min-w-0 overflow-hidden border-t border-slate-700/80 bg-card-bg-secondary lg:border-l`}>
               {selectedBookmark && editingBookmark?.id === selectedBookmark.id ? (
                 <form onSubmit={handleUpdateBookmark} className="mx-auto flex h-full min-h-[70dvh] max-w-5xl flex-col px-5 py-5 sm:px-8 lg:min-h-0 lg:px-10 lg:py-7">
                   <button
