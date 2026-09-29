@@ -10,6 +10,8 @@ interface MarkdownEditorProps {
   required?: boolean;
   rows?: number;
   showHelp?: boolean;
+  fillHeight?: boolean;
+  seamless?: boolean;
 }
 
 const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
@@ -18,14 +20,16 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
   placeholder = "Add your notes here... (Markdown supported)",
   required = false,
   rows = 4,
-  showHelp = true
+  showHelp = true,
+  fillHeight = false,
+  seamless = false
 }) => {
   const [showPreview, setShowPreview] = useState(false);
 
   return (
-    <div className="space-y-2">
+    <div className={fillHeight ? 'flex h-full min-h-0 flex-col' : 'space-y-2'}>
       {/* Tab buttons */}
-        <div className="flex border-b border-zinc-600">
+        <div className="flex shrink-0 border-b border-zinc-600">
           <button
             type="button"
             onClick={() => setShowPreview(false)}
@@ -52,7 +56,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
 
       {/* Content area */}
       {showPreview ? (
-          <div className="min-h-[100px] p-3 bg-input-bg border border-input-border rounded-md">
+          <div className={`${fillHeight ? 'min-h-0 flex-1 overflow-y-auto' : 'min-h-[100px]'} ${seamless ? 'bg-transparent px-1 py-5' : 'rounded-md border border-input-border bg-input-bg p-3'}`}>
           {value.trim() ? (
             <MarkdownRenderer content={value} />
           ) : (
@@ -60,14 +64,14 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({
           )}
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className={fillHeight ? 'min-h-0 flex-1' : 'space-y-2'}>
           <textarea
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
             required={required}
             rows={rows}
-            className="w-full px-3 py-2 bg-input-bg border border-input-border text-text-primary rounded-md focus:outline-none focus:ring-2 focus:ring-text-muted focus:border-text-muted placeholder-text-muted font-mono"
+            className={`w-full text-text-primary placeholder-text-muted font-mono focus:outline-none ${fillHeight ? 'h-full min-h-0 resize-none' : ''} ${seamless ? 'border-0 bg-transparent px-1 py-5 focus:ring-0' : 'rounded-md border border-input-border bg-input-bg px-3 py-2 focus:border-text-muted focus:ring-2 focus:ring-text-muted'}`}
           />
           {/* Markdown help */}
             {showHelp ? (

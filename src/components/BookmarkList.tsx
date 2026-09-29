@@ -4,8 +4,6 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Bookmark } from '@/lib/db/schema';
 import ConfirmationModal from './ConfirmationModal';
-import Popover from './Popover';
-import MarkdownRenderer from './MarkdownRenderer';
 import MarkdownEditor from './MarkdownEditor';
 import Fuse from 'fuse.js';
 
@@ -17,11 +15,6 @@ interface BookmarkFormData {
 
 const INITIAL_LOAD_COUNT = 20;
 const CHUNK_SIZE = 10;
-
-const truncateUrl = (url: string, maxLength: number = 60): string => {
-  if (url.length <= maxLength) return url;
-  return url.substring(0, maxLength) + '...';
-};
 
 const BookmarkList = () => {
   // Data states
@@ -39,11 +32,12 @@ const BookmarkList = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [fuse, setFuse] = useState<Fuse<Bookmark> | null>(null);
   const [showNotesOnly, setShowNotesOnly] = useState(false);
-  
+  const [selectedBookmarkId, setSelectedBookmarkId] = useState<number | null>(null);
+  const [showMobileDetail, setShowMobileDetail] = useState(false);
+  const [detailSaveState, setDetailSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
 
   // Form states
   const [showAddForm, setShowAddForm] = useState(false);
-  const [showEditForm, setShowEditForm] = useState(false);
   const [editingBookmark, setEditingBookmark] = useState<(Bookmark & BookmarkFormData) | null>(null);
   const [newBookmark, setNewBookmark] = useState<BookmarkFormData>({
     url: '',
@@ -273,6 +267,43 @@ const BookmarkList = () => {
     }
   }, [showNotesOnly, searchQuery, allBookmarks, handleSearch, applyFilters]);
 
+  const visibleBookmarks = Object.values(displayedBookmarks).flat();
+  const selectedBookmark = allBookmarks.find(bookmark => bookmark.id === selectedBookmarkId)
+    || visibleBookmarks.find(bookmark => bookmark.id === selectedBookmarkId)
+    || null;
+  const hasUnsavedChanges = Boolean(editingBookmark && selectedBookmark && (
+    editingBookmark.url !== (selectedBookmark.url || '')
+    || editingBookmark.notes !== (selectedBookmark.notes || '')
+    || editingBookmark.tags !== (selectedBookmark.tags || '')
+  ));
+
+  useEffect(() => {
+    if (selectedBookmarkId === null || !selectedBookmark) {
+      setSelectedBookmarkId(visibleBookmarks[0]?.id ?? null);
+      setShowMobileDetail(false);
+    }
+  }, [displayedBookmarks, selectedBookmarkId, selectedBookmark]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (selectedBookmark && editingBookmark?.id !== selectedBookmark.id) {
+      setEditingBookmark({
+        ...selectedBookmark,
+        url: selectedBookmark.url || '',
+        notes: selectedBookmark.notes || '',
+        tags: selectedBookmark.tags || ''
+      });
+      setDetailSaveState('idle');
+    }
+  }, [selectedBookmark?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const warnBeforeLeaving = (event: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) event.preventDefault();
+    };
+    window.addEventListener('beforeunload', warnBeforeLeaving);
+    return () => window.removeEventListener('beforeunload', warnBeforeLeaving);
+  }, [hasUnsavedChanges]);
+
   const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     handleSearch(query);
@@ -344,6 +375,11 @@ const BookmarkList = () => {
         throw new Error('Failed to delete bookmark');
       }
 
+      if (bookmarkToDelete.id === selectedBookmarkId) {
+        setSelectedBookmarkId(visibleBookmarks.find(bookmark => bookmark.id !== bookmarkToDelete.id)?.id ?? null);
+        setEditingBookmark(null);
+        setShowMobileDetail(false);
+      }
       setSuccessMessage('Bookmark deleted successfully!');
       setShowSuccessModal(true);
 
@@ -359,22 +395,13 @@ const BookmarkList = () => {
     }
   };
 
-  const handleEditBookmark = (bookmark: Bookmark) => {
-    setEditingBookmark({
-      ...bookmark,
-      url: bookmark.url || '',
-      notes: bookmark.notes || '',
-      tags: bookmark.tags || ''
-    });
-    setShowEditForm(true);
-  };
-
   const handleUpdateBookmark = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!editingBookmark) return;
 
     try {
+      setDetailSaveState('saving');
       const response = await fetch(`/api/bookmarks/${editingBookmark.id}`, {
         method: 'PUT',
         headers: {
@@ -392,117 +419,62 @@ const BookmarkList = () => {
         throw new Error('Failed to update bookmark');
       }
 
-      setEditingBookmark(null);
-      setShowEditForm(false);
-      setSuccessMessage('Bookmark updated successfully!');
-      setShowSuccessModal(true);
+      const updatedBookmark = await response.json() as Bookmark;
+      setEditingBookmark({
+        ...updatedBookmark,
+        url: updatedBookmark.url || '',
+        notes: updatedBookmark.notes || '',
+        tags: updatedBookmark.tags || ''
+      });
+      setAllBookmarks(current => current.map(bookmark => bookmark.id === updatedBookmark.id ? updatedBookmark : bookmark));
+      setDetailSaveState('saved');
 
       // Reload data after updating
       loadInitialBookmarks();
       loadAllBookmarks();
     } catch (error) {
       console.error('Error updating bookmark:', error);
+      setDetailSaveState('idle');
       setSuccessMessage('Failed to update bookmark. Please try again.');
       setShowSuccessModal(true);
     }
   };
 
   const handleBookmarkClick = (bookmark: Bookmark) => {
-    if (bookmark.url) {
-      window.open(bookmark.url, '_blank', 'noopener,noreferrer');
+    if (bookmark.id !== selectedBookmarkId && hasUnsavedChanges && !window.confirm('Discard your unsaved changes?')) {
+      return;
     }
+    setSelectedBookmarkId(bookmark.id);
+    setShowMobileDetail(true);
   };
 
   const renderBookmarkItem = (bookmark: Bookmark) => {
     const date = new Date(bookmark.createdAt || '').toLocaleDateString();
-    const tags = bookmark.tags ? bookmark.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [];
+    const isSelected = selectedBookmarkId === bookmark.id;
 
     return (
-      <div
+      <button
+        type="button"
         key={bookmark.id}
-        className={`rounded-md border border-slate-700/70 bg-card-bg p-2.5 transition-colors overflow-hidden mb-2.5 last:mb-0 ${bookmark.url ? 'cursor-pointer' : ''}`}
-        style={{ backgroundColor: 'var(--card-bg)' }}
-        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--card-bg-hover)')}
-        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--card-bg)')}
+        aria-selected={isSelected}
+        className={`mb-1 w-full overflow-hidden rounded-md border px-3 py-2.5 text-left transition-colors last:mb-0 ${
+          isSelected
+            ? 'border-slate-500 bg-slate-700/80'
+            : 'border-transparent bg-transparent hover:border-slate-700 hover:bg-slate-800/70'
+        }`}
         onClick={() => handleBookmarkClick(bookmark)}
       >
-        <div className="mb-1.5 min-w-0">
-          {bookmark.url ? (
-            <a
-              href={bookmark.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="text-text-primary hover:text-text-secondary font-medium text-sm block truncate"
-            >
-              {bookmark.title}
-            </a>
-          ) : (
-            <span className="font-medium text-sm text-white block truncate">{bookmark.title}</span>
-          )}
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="min-w-0 flex-1 truncate text-sm font-medium text-white">{bookmark.title}</span>
+          <span className="shrink-0 text-[10px] uppercase tracking-wider text-slate-500">
+            {bookmark.url ? 'Link' : 'Note'}
+          </span>
         </div>
-
-        {bookmark.url && (
-          <div className="text-xs text-text-secondary mb-1.5 break-words">
-            <Popover content={bookmark.url}>
-              <span className="cursor-help text-xs text-text-muted inline-block max-w-full truncate">{truncateUrl(bookmark.url)}</span>
-            </Popover>
-          </div>
-        )}
-
-        {bookmark.notes && (
-          <div className="mb-2 text-xs leading-relaxed text-text-secondary">
-            <MarkdownRenderer content={bookmark.notes} />
-          </div>
-        )}
-
-        {tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-2">
-            {tags.map((tag, index) => (
-              <span
-                key={index}
-                className="inline-block bg-slate-700/70 text-slate-200 text-[11px] px-2 py-0.5 rounded-full"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-
-        <div className="flex justify-between items-center gap-2 text-xs text-text-secondary">
-          <div>Added: {date}</div>
-          <div className="flex gap-2">
-            <button
-              className="text-text-secondary hover:text-text-primary p-1 rounded"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleEditBookmark(bookmark);
-              }}
-              title="Edit bookmark"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="m18 2 4 4-14 14H4v-4L18 2z"></path>
-                <path d="m14.5 5.5 4 4"></path>
-              </svg>
-            </button>
-            <button
-              className="text-text-secondary hover:text-text-primary p-1 rounded"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDeleteBookmark(bookmark.id, bookmark.title);
-              }}
-              title="Delete bookmark"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="3,6 5,6 21,6"></polyline>
-                <path d="m19,6v14a2,2 0,0,1 -2,2H7a2,2 0,0,1 -2,-2V6m3,0V4a2,2 0,0,1 2,-2h4a2,2 0,0,1 2,2v2"></path>
-                <line x1="10" y1="11" x2="10" y2="17"></line>
-                <line x1="14" y1="11" x2="14" y2="17"></line>
-              </svg>
-            </button>
-          </div>
+        <div className="mt-1 line-clamp-2 min-h-5 text-xs leading-relaxed text-slate-400">
+          {bookmark.notes?.trim() || bookmark.url || 'Empty note'}
         </div>
-      </div>
+        <div className="mt-1.5 text-[11px] text-slate-500">{date}</div>
+      </button>
     );
   };
 
@@ -520,7 +492,7 @@ const BookmarkList = () => {
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--background)' }}>
       <header className="sticky top-0 z-40 border-b border-slate-700/80" style={{ backgroundColor: 'var(--header-bg)' }}>
-        <div className="max-w-5xl mx-auto px-4 sm:px-5 lg:px-6">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-5 lg:px-6">
           <div className="py-2">
             <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] gap-2 sm:gap-3 items-center">
               {/* Logo - first column */}
@@ -586,7 +558,7 @@ const BookmarkList = () => {
       </header>
 
       {/* Filter section */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-5 lg:px-6">
+      <div className="max-w-screen-2xl mx-auto px-4 sm:px-5 lg:px-6">
         <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-2">
             <button
@@ -627,7 +599,7 @@ const BookmarkList = () => {
         </div>
       </div>
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-5 lg:px-6 py-4">
+      <main className="max-w-screen-2xl mx-auto px-4 sm:px-5 lg:px-6 py-4">
         {Object.keys(displayedBookmarks).length === 0 ? (
           <div className="text-center py-12">
             <div className="text-slate-400 text-lg">
@@ -643,50 +615,143 @@ const BookmarkList = () => {
             )}
           </div>
         ) : (
-          <div className="space-y-3">
-            {Object.entries(displayedBookmarks)
-              .sort(([a], [b]) => a.localeCompare(b))
-              .map(([domain, domainBookmarks]) => (
-                <div
-                  key={domain}
-                  className="rounded-md border border-slate-700/80 bg-card-bg-secondary"
-                  style={{ backgroundColor: 'var(--card-bg-secondary)' }}
-                >
-                  <div className="px-3 py-2 border-b border-slate-600 rounded-t-md bg-card-bg" style={{ backgroundColor: 'var(--card-bg)' }}>
-                    <div className="flex justify-between items-center gap-2">
-                      <h2 className="text-sm font-semibold text-white truncate">{domain}</h2>
-                      <span className="bg-slate-700 text-slate-200 text-xs px-2 py-0.5 rounded-full">
-                        {(domainBookmarks as Bookmark[]).length}
-                      </span>
+          <div className="lg:grid lg:h-[calc(100dvh-9.5rem)] lg:grid-cols-[22rem_minmax(0,1fr)] lg:gap-4">
+            <section className={`${showMobileDetail ? 'hidden lg:block' : 'block'} overflow-hidden rounded-lg border border-slate-700/80 bg-card-bg-secondary lg:overflow-y-auto`}>
+              <div className="space-y-1 p-2">
+                {Object.entries(displayedBookmarks)
+                  .sort(([a], [b]) => a.localeCompare(b))
+                  .map(([domain, domainBookmarks]) => (
+                    <div key={domain}>
+                      <div className="sticky top-0 z-10 flex items-center justify-between bg-card-bg-secondary px-2 pb-1 pt-3">
+                        <h2 className="truncate text-[11px] font-semibold uppercase tracking-wider text-slate-400">{domain}</h2>
+                        <span className="text-[11px] text-slate-500">{(domainBookmarks as Bookmark[]).length}</span>
+                      </div>
+                      {(domainBookmarks as Bookmark[]).map(renderBookmarkItem)}
                     </div>
-                  </div>
-                  {(domainBookmarks as Bookmark[]).map(renderBookmarkItem)}
-                </div>
-              ))}
+                  ))}
 
-            {/* Infinite scroll trigger */}
-            {!searchQuery && visibleCount < filteredBookmarks.length && (
-              <div ref={loadMoreRef} className="text-center py-8">
-                {loadingMore ? (
-                  <div className="text-slate-400">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-400 mx-auto mb-2"></div>
-                    Loading more bookmarks...
+                {!searchQuery && visibleCount < filteredBookmarks.length && (
+                  <div ref={loadMoreRef} className="py-6 text-center text-sm text-slate-500">
+                    {loadingMore ? 'Loading more...' : 'Scroll to load more...'}
                   </div>
-                ) : (
-                  <div className="text-slate-500">Scroll to load more...</div>
+                )}
+
+                {searchQuery && (
+                  <div className="py-4 text-center text-xs text-slate-500">
+                    {filteredBookmarks.length} result{filteredBookmarks.length !== 1 ? 's' : ''}
+                  </div>
                 )}
               </div>
-            )}
+            </section>
 
-            {/* Search results info */}
-            {searchQuery && (
-              <div className="text-center py-4">
-                <div className="text-slate-500 text-sm">
-                  Showing {filteredBookmarks.length} result{filteredBookmarks.length !== 1 ? 's' : ''} for &quot;{searchQuery}&quot;
-                  {showNotesOnly && " in notes only"}
-                </div>
-              </div>
-            )}
+            <section className={`${showMobileDetail ? 'block' : 'hidden lg:block'} min-w-0 overflow-hidden rounded-lg border border-slate-700/80 bg-card-bg-secondary`}>
+              {selectedBookmark && editingBookmark?.id === selectedBookmark.id ? (
+                <form onSubmit={handleUpdateBookmark} className="mx-auto flex h-full min-h-[70dvh] max-w-5xl flex-col px-5 py-5 sm:px-8 lg:min-h-0 lg:px-10 lg:py-7">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!hasUnsavedChanges || window.confirm('Discard your unsaved changes?')) {
+                        if (hasUnsavedChanges) {
+                          setEditingBookmark({
+                            ...selectedBookmark,
+                            url: selectedBookmark.url || '',
+                            notes: selectedBookmark.notes || '',
+                            tags: selectedBookmark.tags || ''
+                          });
+                        }
+                        setShowMobileDetail(false);
+                      }
+                    }}
+                    className="mb-5 text-sm text-slate-400 hover:text-white lg:hidden"
+                  >
+                    ← Back to notes
+                  </button>
+                  <div className="flex items-start gap-4 border-b border-slate-700/70 pb-5">
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-2 text-xs uppercase tracking-wider text-slate-500">
+                        {selectedBookmark.url ? selectedBookmark.domain : 'Note'} · {new Date(selectedBookmark.createdAt || '').toLocaleDateString()}
+                      </div>
+                      <h2 className="text-2xl font-semibold leading-tight text-white sm:text-3xl">{selectedBookmark.title}</h2>
+                      {editingBookmark.url && (
+                        <a
+                          href={editingBookmark.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-3 block break-all text-sm text-slate-400 hover:text-white"
+                        >
+                          {editingBookmark.url} ↗
+                        </a>
+                      )}
+                    </div>
+                    <div className="flex shrink-0 gap-2">
+                      <button
+                        type="submit"
+                        disabled={!hasUnsavedChanges || detailSaveState === 'saving'}
+                        className="rounded-md bg-slate-200 px-3 py-2 text-sm font-medium text-slate-900 hover:bg-white disabled:cursor-default disabled:bg-slate-700 disabled:text-slate-400"
+                      >
+                        {detailSaveState === 'saving' ? 'Saving...' : detailSaveState === 'saved' && !hasUnsavedChanges ? 'Saved' : 'Save'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteBookmark(selectedBookmark.id, selectedBookmark.title)}
+                        className="rounded-md border border-slate-700 px-3 py-2 text-sm text-slate-400 hover:border-slate-500 hover:text-white"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="min-h-64 flex-1 py-3 lg:min-h-0">
+                    <MarkdownEditor
+                      key={selectedBookmark.id}
+                      value={editingBookmark.notes}
+                      onChange={(notes) => {
+                        setEditingBookmark({ ...editingBookmark, notes });
+                        setDetailSaveState('idle');
+                      }}
+                      rows={18}
+                      showHelp={false}
+                      fillHeight
+                      seamless
+                    />
+                  </div>
+
+                  <details className="shrink-0 border-t border-slate-700/70 pt-4">
+                    <summary className="cursor-pointer text-sm text-slate-400 hover:text-white">Bookmark details</summary>
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                      <label className="text-xs font-medium text-slate-300">
+                        URL (optional)
+                        <input
+                          type="url"
+                          value={editingBookmark.url}
+                          onChange={(event) => {
+                            setEditingBookmark({ ...editingBookmark, url: event.target.value });
+                            setDetailSaveState('idle');
+                          }}
+                          placeholder="https://example.com"
+                          className="mt-1 block w-full rounded-md border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-500"
+                        />
+                      </label>
+                      <label className="text-xs font-medium text-slate-300">
+                        Tags (comma separated)
+                        <input
+                          type="text"
+                          value={editingBookmark.tags}
+                          onChange={(event) => {
+                            setEditingBookmark({ ...editingBookmark, tags: event.target.value });
+                            setDetailSaveState('idle');
+                          }}
+                          placeholder="work, reference, tutorial"
+                          className="mt-1 block w-full rounded-md border border-input-border bg-input-bg px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-500"
+                        />
+                      </label>
+                    </div>
+                  </details>
+                </form>
+              ) : (
+                <div className="flex h-full min-h-80 items-center justify-center p-8 text-slate-500">Select a note or bookmark</div>
+              )}
+            </section>
           </div>
         )}
       </main>
@@ -708,7 +773,7 @@ const BookmarkList = () => {
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
           onClick={(e) => e.target === e.currentTarget && setShowAddForm(false)}
         >
-           <div className="rounded-md shadow-lg w-full max-w-sm border border-slate-700 bg-card-bg-secondary" style={{ backgroundColor: 'var(--card-bg-secondary)' }}>
+            <div className="max-h-[90dvh] w-full max-w-2xl overflow-y-auto rounded-md border border-slate-700 bg-card-bg-secondary shadow-lg" style={{ backgroundColor: 'var(--card-bg-secondary)' }}>
             <div className="p-3">
               <h3 className="text-sm font-semibold text-white mb-2">Add Bookmark or Note</h3>
               <form onSubmit={handleAddBookmark} className="space-y-2.5">
@@ -733,7 +798,7 @@ const BookmarkList = () => {
                       value={newBookmark.notes}
                       onChange={(value) => setNewBookmark({ ...newBookmark, notes: value })}
                       required
-                      rows={4}
+                      rows={10}
                       showHelp={false}
                     />
                 </div>
@@ -761,74 +826,6 @@ const BookmarkList = () => {
                   <button
                     type="button"
                     onClick={() => setShowAddForm(false)}
-                    className="flex-1 bg-slate-700 text-slate-200 py-1.5 rounded-md hover:bg-slate-600 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Form Modal */}
-      {showEditForm && editingBookmark && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-          onClick={(e) => e.target === e.currentTarget && setShowEditForm(false)}
-        >
-           <div className="rounded-md shadow-lg w-full max-w-sm border border-slate-700 bg-card-bg-secondary" style={{ backgroundColor: 'var(--card-bg-secondary)' }}>
-            <div className="p-3">
-              <h3 className="text-sm font-semibold text-white mb-2">Edit Bookmark</h3>
-              <form onSubmit={handleUpdateBookmark} className="space-y-2.5">
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    URL (optional)
-                  </label>
-                  <input
-                    type="url"
-                    value={editingBookmark.url}
-                    onChange={(e) => setEditingBookmark({ ...editingBookmark, url: e.target.value })}
-                    placeholder="https://example.com"
-                   className="w-full px-3 py-2 bg-input-bg border border-input-border text-text-primary rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 placeholder-text-muted"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Notes
-                  </label>
-                  <MarkdownEditor
-                    value={editingBookmark.notes}
-                    onChange={(value) => setEditingBookmark({ ...editingBookmark, notes: value })}
-                    rows={4}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Tags (comma separated)
-                  </label>
-                  <input
-                    type="text"
-                    value={editingBookmark.tags}
-                    onChange={(e) => setEditingBookmark({ ...editingBookmark, tags: e.target.value })}
-                    placeholder="work, reference, tutorial"
-                   className="w-full px-3 py-2 bg-input-bg border border-input-border text-text-primary rounded-md focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-slate-500 placeholder-text-muted"
-                  />
-                </div>
-
-                <div className="flex gap-2 pt-1.5">
-                  <button
-                    type="submit"
-                    className="flex-1 bg-slate-700 text-white py-1.5 rounded-md hover:bg-slate-600 transition-colors"
-                  >
-                    Update
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowEditForm(false)}
                     className="flex-1 bg-slate-700 text-slate-200 py-1.5 rounded-md hover:bg-slate-600 transition-colors"
                   >
                     Cancel

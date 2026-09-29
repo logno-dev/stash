@@ -175,6 +175,22 @@ This app is ready to deploy on Vercel:
 3. Add your environment variables in Vercel dashboard
 4. Deploy!
 
+## Native Android app
+
+The Kotlin + Jetpack Compose app lives in the `android-app/` Git submodule, with its own repository and GitHub Actions releases:
+
+- Repository / Obtainium source: https://github.com/logno-dev/stash-android
+- App setup, signing, and development: [android-app/README.md](android-app/README.md)
+- Features include a minimal dark UI, the existing Stash API, Markdown notes, search, tags, and Android shared-link capture.
+
+Initialize it after cloning this repository:
+
+```bash
+git submodule update --init --recursive
+```
+
+The older `react-native-bookmark/` app is abandoned; new Android development belongs in `android-app/`.
+
 ## Browser Extension Integration
 
 The app supports URL parameters for easy integration with browser extensions:
